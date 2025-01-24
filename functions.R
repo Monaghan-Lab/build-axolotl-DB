@@ -1,8 +1,11 @@
+#library("usethis")
+#usethis::create_project("/scratch/miller.me/CellChat_DB/build-axolotl-DB")
+
 # Source functions for building custom axolotl CellChat DB
 
 # prep_gene_list - build gene lists for downstream database filtering
 #
-# REQUIRED: 
+# REQUIRED:
 # objects - list of input Seurat objects as RDS files
 #
 # OPTIONS:
@@ -11,50 +14,50 @@
 # write.outfiles - write gene list to selected directory (default TRUE)
 # out.dir - directory to output written files to (default working directory)
 
-prep_gene_list <- function(objects, assay = NULL, contains.spaces = FALSE, 
+prep_gene_list <- function(objects, assay = NULL, contains.spaces = FALSE,
                            write.outfile = TRUE, out.dir = NULL){
   object.list <- objects
   assay <- assay
-  
+
   writeDir <- out.dir
   if(is.null(writeDir)){
     writeDir <- "./"
   }
-  
+
   gene.list <- c()
   for(object in 1:length(object.list)){
     input <- object.list[[object]]
-    
+
     if(is.null(assay)){
       genes.add <- rownames(input@assays[["RNA"]]@features)
       gene.list <- c(gene.list, genes.add)
     } else if(!is.null(assay)){
       if(assay == "RNA"){
         genes.add <- rownames(input@assays[["RNA"]]@features)
-        gene.list <- c(gene.list, genes.add)} 
-      else if(assay == "SCT"){ 
+        gene.list <- c(gene.list, genes.add)}
+      else if(assay == "SCT"){
           genes.add <- input@assays[["SCT"]]@counts@Dimnames[[1]]
-          gene.list <- c(gene.list, genes.add)} 
+          gene.list <- c(gene.list, genes.add)}
       else if(!assay %in% c("SCT", "RNA")){
             stop("The input assay must be one of either RNA or SCT")
     }}
-    
+
     if(isTRUE(contains.spaces)){
-      gene.list <- as.data.frame(gene.list) %>% 
+      gene.list <- as.data.frame(gene.list) %>%
         `colnames<-`(c("Genes")) %>%
         mutate(Genes = gsub(" ","",Genes)) %>%
         unique()
       if(isTRUE(write.outfile)){
-        write_delim(gene.list, 
+        write_delim(gene.list,
                     file.path(writeDir, "Genes_for_filter.txt"))
       }
       gene.list <- as.list(gene.list)[[1]]
-      
+
     } else{
       gene.list <- gene.list %>% unique()
-      
+
       if(isTRUE(write.outfile)){
-        write_delim(as.data.frame(gene.list) %>% `colnames<-`(c("Genes")), 
+        write_delim(as.data.frame(gene.list) %>% `colnames<-`(c("Genes")),
                     file.path(writeDir, "Genes_for_filter.txt"))
       }
     }
@@ -81,15 +84,15 @@ prep_gene_map <- function(gxt.map,
                           tx.delim = "-",
                           human.priority = FALSE,
                           drop.nonhuman = FALSE,
-                          contains.spaces = FALSE, 
-                          write.outfiles = TRUE, 
+                          contains.spaces = FALSE,
+                          write.outfiles = TRUE,
                           out.dir = NULL){
 
   writeDir <- out.dir
   if(is.null(writeDir)){
     writeDir <- "./"
   }
-  
+
   if(isTRUE(map.header)){
   gxtMap <- read.delim(gxt.map, header = TRUE) %>%
     `colnames<-`(c("geneID", "transcript"))
@@ -97,24 +100,24 @@ prep_gene_map <- function(gxt.map,
     gxtMap <- read.delim(gxt.map, header = FALSE) %>%
       `colnames<-`(c("geneID", "transcript"))
     }
-  
+
   tx.delim <- match.arg(tx.delim)
   # Filter out rows with NO annotation - consider just building into below manipulation
   gxtMap <- gxtMap %>%
     filter(str_detect(transcript, tx.delim))
-  
+
   if(nrow(gxtMap) == 0){
     stop("Check the format of the input annotation file!")
   }
-  
+
   if(isTRUE(contains.spaces)){
     gxtMap <- gxtNMap %>% mutate(transcript = gsub(" ", "", transcript))
   }
-  
+
   # Now need to work in actual manipulation based on preservation / priority of human genes
-  
+
   return(geneMap)
-  
+
 }
 
 # Not yet started ------
