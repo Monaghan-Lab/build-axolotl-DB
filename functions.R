@@ -127,21 +127,201 @@ prep_synonym_map <- function(write.outfile = TRUE, out.dir = NULL){
 # write.outfile - write output to out.dir? (default TRUE)
 # out.dir - directory to output written files to (default working directory)
 
-
 make_complex_input <- function(annotation.map = NULL, filter.genes = NULL,
                                priority = c("human", "other", "none"), filter = c("strict", "relaxed", "none"), annotation.cutoff = NULL,
                                check.synonyms = FALSE, synonym.map = NULL,
                                contains.spaces = TRUE,
-                               write.outfiles = TRUE, out.dir = NULL){
-  complex_input <- CellChatDB.human$complex
+                               write.outfile = TRUE, out.dir = NULL){
+
+  colnames(annotation.map) <- c("full", "human", "other")
+  if(!any(is.na(annotation.map))){
+    complex_input[complex_input == ""] <- NA
+  }
+  emptyLine <- data.frame(full="", human="", other="") # empty line for parsing
+  annotation.map <- rbind(annotation.map, emptyLine)
 
   writeDir <- out.dir
   if(is.null(writeDir)){
     writeDir <- "./"
   }
 
+  complex_input <- CellChatDB.human$complex
+  complex_input[complex_input == ""] <- NA
+  complex_count = rowSums(!(is.na(complex_input)))
+  complex_input$start_na <- complex_count # For later to determine what valid "missingness" is to keep after mapping
 
+  complex_output_1 <- complex_input %>%
+    rownames_to_column("rowname") %>%
+    mutate(rowname = case_when(rowname %in% c("RA-ALDH1A1", "RA-ALDH1A2", "RA-ALDH1A3") ~ gsub("RA-","", rowname),
+                               TRUE ~ rowname)) %>% # To be able to match to interactions
+    mutate(subunit_2 = case_when(subunit_2 == "ALDH1A1" ~ NA,
+                                 TRUE ~ subunit_2), # ONLY for ALDH1A1 is there two "subunits". ALDH1A2 and ALDH1A3 show only one.
+           start_na = case_when(rowname == "ALDH1A1" ~ 1,
+                                TRUE ~ start_na)) %>%
+    left_join(annotation.map, by=c("subunit_1" = "human"), relationship = "many-to-many") %>%
+    rename(subunit_1a = full) %>%
+    left_join(annotation.map, by=c("subunit_2" = "human"),relationship = "many-to-many") %>%
+    rename(subunit_2a = full)  %>%
+    left_join(annotation.map, by=c("subunit_3" = "human"),relationship = "many-to-many") %>%
+    rename(subunit_3a = full) %>%
+    left_join(annotation.map, by=c("subunit_4" = "human"),relationship = "many-to-many") %>%
+    rename(subunit_4a = full) %>%
+    left_join(annotation.map, by=c("subunit_5" = "human"),relationship = "many-to-many") %>%
+    rename(subunit_5a = full) %>%
+    left_join(annotation.map, by=c("subunit_1" = "other"), relationship = "many-to-many") %>%
+    rename(subunit_1b = full) %>%
+    left_join(annotation.map, by=c("subunit_2" = "other"),relationship = "many-to-many") %>%
+    rename(subunit_2b = full)  %>%
+    left_join(annotation.map, by=c("subunit_3" = "other"),relationship = "many-to-many") %>%
+    rename(subunit_3b = full) %>%
+    left_join(annotation.map, by=c("subunit_4" = "other"),relationship = "many-to-many") %>%
+    rename(subunit_4b = full) %>%
+    left_join(annotation.map, by=c("subunit_5" = "other"),relationship = "many-to-many") %>%
+    rename(subunit_5b = full)
 
+  priority <- match.arg(priority)
+  if(missing(priority)){
+    priority <- "none"
+  }
+
+  if(priority == "human"){
+    complex_output_1 <- complex_output_1 %>%
+    mutate(final_1 = case_when(!is.na(subunit_1a) & is.na(subunit_1b) ~ subunit_1a,
+                               !is.na(subunit_1a) & !is.na(subunit_1b) ~ subunit_1a,
+                               is.na(subunit_1a) & !is.na(subunit_1b) ~ subunit_1b,
+                               is.na(subunit_1a) & is.na(subunit_1b) ~ NA),
+           final_2 = case_when(!is.na(subunit_2a) & is.na(subunit_2b) ~ subunit_2a,
+                               !is.na(subunit_2a) & !is.na(subunit_2b) ~ subunit_2a,
+                               is.na(subunit_2a) & !is.na(subunit_2b) ~ subunit_2b,
+                               is.na(subunit_2) ~ NA,
+                               is.na(subunit_2a) & is.na(subunit_2b) ~ NA),
+           final_3 = case_when(!is.na(subunit_3a) & is.na(subunit_3b) ~ subunit_3a,
+                               !is.na(subunit_3a) & !is.na(subunit_3b) ~ subunit_3a,
+                               is.na(subunit_3a) & !is.na(subunit_3b) ~ subunit_3b,
+                               is.na(subunit_3) ~ NA,
+                               is.na(subunit_3a) & is.na(subunit_3b) ~ NA),
+           final_4 = case_when(!is.na(subunit_4a) & is.na(subunit_4b) ~ subunit_4a,
+                               !is.na(subunit_4a) & !is.na(subunit_4b) ~ subunit_4a,
+                               is.na(subunit_4a) & !is.na(subunit_4b) ~ subunit_4b,
+                               is.na(subunit_4) ~ NA,
+                               is.na(subunit_4a) & is.na(subunit_4b) ~ NA),
+           final_5 = case_when(!is.na(subunit_5a) & is.na(subunit_5b) ~ subunit_5a,
+                               !is.na(subunit_5a) & !is.na(subunit_5b) ~ subunit_5a,
+                               is.na(subunit_5a) & !is.na(subunit_5b) ~ subunit_5b,
+                               is.na(subunit_5) ~ NA,
+                               is.na(subunit_5a) & is.na(subunit_5b) ~ NA)) %>%
+    select(c("rowname", "start_na", starts_with("final"))) %>%
+      unique() %>%
+      `colnames<-`(c("rowname", "start_na", "subunit_1", "subunit_2", "subunit_3", "subunit_4", "subunit_5")) } else{
+        complex_output_1 <- complex_output_1 %>%
+          mutate(final_1 = case_when(!is.na(subunit_1a) & is.na(subunit_1b) ~ subunit_1a,
+                                     !is.na(subunit_1a) & !is.na(subunit_1b) ~ paste0(subunit_1a,";",subunit_1b),
+                                     is.na(subunit_1a) & !is.na(subunit_1b) ~ subunit_1b,
+                                     is.na(subunit_1a) & is.na(subunit_1b) ~ NA),
+                 final_2 = case_when(!is.na(subunit_2a) & is.na(subunit_2b) ~ subunit_2a,
+                                     !is.na(subunit_2a) & !is.na(subunit_2b) ~ paste0(subunit_2a,";",subunit_2b),
+                                     is.na(subunit_2a) & !is.na(subunit_2b) ~ subunit_2b,
+                                     is.na(subunit_2) ~ NA,
+                                     is.na(subunit_2a) & is.na(subunit_2b) ~ NA),
+                 final_3 = case_when(!is.na(subunit_3a) & is.na(subunit_3b) ~ subunit_3a,
+                                     !is.na(subunit_3a) & !is.na(subunit_3b) ~ paste0(subunit_3a,";",subunit_3b),
+                                     is.na(subunit_3a) & !is.na(subunit_3b) ~ subunit_3b,
+                                     is.na(subunit_3) ~ NA,
+                                     is.na(subunit_3a) & is.na(subunit_3b) ~ NA),
+                 final_4 = case_when(!is.na(subunit_4a) & is.na(subunit_4b) ~ subunit_4a,
+                                     !is.na(subunit_4a) & !is.na(subunit_4b) ~ paste0(subunit_4a,";",subunit_4b),
+                                     is.na(subunit_4a) & !is.na(subunit_4b) ~ subunit_4b,
+                                     is.na(subunit_4) ~ NA,
+                                     is.na(subunit_4a) & is.na(subunit_4b) ~ NA),
+                 final_5 = case_when(!is.na(subunit_5a) & is.na(subunit_5b) ~ subunit_5a,
+                                     !is.na(subunit_5a) & !is.na(subunit_5b) ~ paste0(subunit_5a,";",subunit_5b),
+                                     is.na(subunit_5a) & !is.na(subunit_5b) ~ subunit_5b,
+                                     is.na(subunit_5) ~ NA,
+                                     is.na(subunit_5a) & is.na(subunit_5b) ~ NA)) %>%
+          select(c("rowname", "start_na", starts_with("final"))) %>%
+          separate_longer_delim(final_1,";") %>%
+          separate_longer_delim(final_2, ";") %>%
+          separate_longer_delim(final_3,";") %>%
+          separate_longer_delim(final_4, ";") %>%
+          separate_longer_delim(final_5,";") %>%
+          unique() %>%
+          `colnames<-`(c("rowname", "start_na", "subunit_1", "subunit_2", "subunit_3", "subunit_4", "subunit_5"))
+      }
+
+  out_na = rowSums(!(is.na(complex_output_1[,-c(1,2)])))
+  complex_output_1$end_na <- out_na
+
+  complex_output_2 <- complex_output_1 %>%
+    filter(end_na != 0) %>% # Filtering out rows with no annotations
+    select(rowname, start_na, end_na, starts_with("subunit_")) %>%
+    mutate(na_diff = (start_na - end_na)/start_na) %>%
+    filter(na_diff < annotation.cutoff) %>% # Drop if more than 50% of subunits are not annotated
+    select(-c(start_na, end_na, na_diff)) %>%
+    unique()
+
+  if(isFALSE(contains.spaces)){
+    complex_output_2 <- complex_output_2 %>%
+      mutate(subunit_1 = gsub(" \\[", "\\[", subunit_1),
+             subunit_2 = case_when(is.na(subunit_2) ~ NA,
+                                   TRUE ~ gsub(" \\[", "\\[", subunit_2)),
+             subunit_3 = case_when(is.na(subunit_3) ~ NA,
+                                   TRUE ~ gsub(" \\[", "\\[", subunit_3)),
+             subunit_4 = case_when(is.na(subunit_4) ~ NA,
+                                   TRUE ~ gsub(" \\[", "\\[", subunit_4)),
+             subunit_5 = case_when(is.na(subunit_5) ~ NA,
+                                   TRUE ~ gsub(" \\[","\\[", subunit_5)))
+  }
+
+  filter.level <- match.arg(filter)
+  if(missing(filter.level)){
+    filter.level <- "strict"
+  }
+
+  # TO DO: is there any way to make filtering smarter? Less cluttered?
+  if(filter.level == "none"){
+    complex_output_3 <- complex_output_2
+  } else if(filter.level == "relaxed"){
+    complex_output_3 <- complex_output_2 %>%
+      filter(subunit_1 %in% filter.genes |
+               subunit_2 %in% filter.genes |
+               subunit_3 %in% filter.genes |
+               subunit_4 %in% filter.genes |
+               subunit_5 %in% filter.genes)
+  } else if(filter.level == "strict"){
+    complex_output_3 <- complex_output_2 %>%
+      filter( ((!is.na(subunit_1) & is.na(subunit_2) & is.na(subunit_3) & is.na(subunit_4)) & (subunit_1 %in% filter.genes)) |
+                ((!is.na(subunit_1) & !is.na(subunit_2) & is.na(subunit_3) & is.na(subunit_4)) & (subunit_1 %in% filter.genes & subunit_2 %in% filter.genes)) |
+                ((!is.na(subunit_1) & !is.na(subunit_2) & !is.na(subunit_3) & is.na(subunit_4)) & (subunit_1 %in% filter.genes & subunit_2 %in% filter.genes & subunit_3 %in% filter.genes)) |
+                ((!is.na(subunit_1) & !is.na(subunit_2) & !is.na(subunit_3) & !is.na(subunit_4)) & (subunit_1 %in% filter.genes & subunit_2 %in% filter.genes & subunit_3 %in% filter.genes & subunit_4 %in% filter.genes)) |
+                ((!is.na(subunit_1) & !is.na(subunit_2) & !is.na(subunit_3) & !is.na(subunit_4) & !is.na(subunit_5)) & (subunit_1 %in% filter.genes & subunit_2 %in% filter.genes & subunit_3 %in% filter.genes & subunit_4 %in% filter.genes & subunit_5 %in% filter.genes)) )
+  }
+
+  if(isFALSE(check.synonyms)){
+    complex_output <- complex_output_3
+    fix_rownames <- complex_output
+    fix_rownames$new_rowname <- make.unique(fix_rownames$rowname, sep = ".")
+    complex_gene_match <- fix_rownames %>% select(rowname, new_rowname) # For later use with interaction input
+    fix_rownames$rowname <- make.unique(fix_rownames$rowname)
+
+    complex_output <- fix_rownames %>%
+      column_to_rownames("new_rowname") %>%
+      select(-rowname)
+
+    if(isTRUE(write.outfile)){
+      write.csv(complex_output, file.path(writeDir, "complex_input_axolotl.csv"))
+    }
+  }
+
+  # TO DO: Add synonym testing + related complex_gene_match with writing outfile
+  if(isTRUE(check.synonyms)){
+    if(missing(synonym.map)){
+      stop("You must provide a synonym map in order to test for synonyms")
+    } else{
+      synonym.map <- synonym.map
+    }
+  }
+
+return(complex_output)
 }
 
 # Not yet started ------
@@ -170,7 +350,7 @@ make_cofactor_input <- function(annotation.map = NULL, filter.genes = NULL,
                                 priority = c("human", "other", "none"), filter = c("strict", "relaxed"), annotation.cutoff = NULL,
                                 check.synonyms = FALSE, synonym.map = NULL,
                                 contains.spaces = TRUE,
-                                write.outfiles = TRUE, out.dir = NULL){}
+                                write.outfile = TRUE, out.dir = NULL){}
 
 # make_interaction_input
 # NOTE: BOTH make_complex_input and make_cofactor_input MUST be run before this step
@@ -182,18 +362,26 @@ make_cofactor_input <- function(annotation.map = NULL, filter.genes = NULL,
 # complexes - output of make_complex_input
 # cofactors - output of make_cofactor_input
 #
-#
 # OPTIONS:
 # priority - give priority to either human or other annotations, or no priority (default "none")
 # filter - how strictly should annotations be filtered using filter.genes? (default "strict")
-# With "strict", ALL annotated components must be in filter.genes; "relaxed" requires at least one.
+# With "strict", ALL annotated SIMPLE components (ligands and receptors) must be in filter.genes; "relaxed" requires at least one.
 # check.synonyms - attempt to rescue interactions by checking for annotated synonyms? (default FALSE)
 # synonym.map - REQUIRED if check.synonyms = TRUE. Symbol-Synonym map output from prep_synonym_map()
 # contains.spaces - do the input feature names contain spaces? (default TRUE)
 # write.outfile - write output to out.dir? (default TRUE)
 # out.dir - directory to output written files to (default working directory)
 
-make_interaction_input <- function(){}
+make_interaction_input <- function(annotation.map = NULL, complexes = NULL, cofactors = NULL, priority = c("human", "other", "none"),
+                                   filter = c("strict", "relaxed", "none"), filter.genes = NULL,
+                                   check.synonyms = FALSE, synonym.map = NULL,
+                                   contains.spaces = TRUE,
+                                   write.outfile = TRUE, out.dir = NULL){
+
+  interaction_input <- interaction_input %>%
+    mutate(ligand = case_when(pathway_name == "RA" ~ gsub("RA-","", ligand),
+                              TRUE ~ ligand))
+}
 
 # make_geneInfo_input
 #
@@ -287,3 +475,11 @@ prep_gene_map <- function(gxt.map, has.header = FALSE, tx.delim = NULL,
   return(gxtMap)
 
 }
+
+# Internal functions ------
+
+complex_synonyms_internal <- function(){}
+
+cofactor_synonyms_internal <- function(){}
+
+interaction_synonyms_internal <- function(){}
