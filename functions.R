@@ -313,7 +313,7 @@ make_complex_input <- function(gene.list, annotation.map,
 
     if(isTRUE(check.synonyms)){
       message("Testing synonyms for complex input")
-      complex_output_2 <- check_synonyms_internal(complex_output_1, input_type = "complex")
+      complex_output_2 <- check_synonyms(complex_output_1, input_type = "complex")
 
       } else{
       complex_output_2 <- complex_output_1 %>%
@@ -442,7 +442,7 @@ make_complex_input <- function(gene.list, annotation.map,
 
     if(isTRUE(check.synonyms)){
       message("Testing synonyms for complex input")
-      complex_output_2 <- check_synonyms_internal(complex_output_1, input_type = "complex")
+      complex_output_2 <- check_synonyms(complex_output_1, input_type = "complex")
     } else{
       complex_output_2 <- complex_output_1 %>%
         select(c("rowname", "start_na", starts_with("final"))) %>%
@@ -512,23 +512,28 @@ make_complex_input <- function(gene.list, annotation.map,
 
 }
 
-# check_synonyms_internal
-# Might not need many of these parameters & just take from input functions
-# probably retain: input, input_type
-check_synonyms_internal <- function(input, input_type = c("complex", "cofactor", "interaction", "geneInfo")){
+# check_synonyms
+check_synonyms <- function(input, input_type = c("complex", "cofactor", "interaction", "geneInfo")){
 
   if(input_type %in% c("complex")){
     complex_input_test <- input
 
 
 
-  } else if(input_type %in% c("cofactor")){
+    return(complex_output_with_synonyms)
+  }
+
+  if(input_type %in% c("cofactor")){
     cofactor_input_test <- input
 
-  } else if(input_type %in% c("interaction")){
+  }
+
+  if(input_type %in% c("interaction")){
     interaction_input_test <- input
 
-  } else if(input_type %in% c("geneInfo")){
+  }
+
+  if(input_type %in% c("geneInfo")){
     geneInfo_input_test <- input
 
   }
