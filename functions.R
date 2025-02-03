@@ -263,7 +263,7 @@ make_complex_input <- function(gene.list, annotation.map,
     filter <- "strict"
   }
   if(!filter %in% c("strict", "relaxed")){
-    stop("'filter' must be one of 'strict' or 'relaxed'")
+    stop("'filter' must be one of 'strict' or 'relaxed'.")
   }
   if(is.null(annotation.cutoff)){
     annotation.cutoff <- 0.5
