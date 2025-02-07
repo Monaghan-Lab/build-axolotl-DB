@@ -231,9 +231,6 @@ prep_synonym_map <- function(write.outfile = TRUE, out.dir = NULL){
 }
 
 # make_complex_input - prepare complex input of CellChat DB
-# TO DO: ADD CAPABILITY FOR TESTING SYNONYMS
-#
-#
 # REQUIRED:
 # gene.list - the output of prep_gene_list that will be used to filter annotated genes
 # annotation.map - the output of prep_gene_map that will be used to match human genes to axolotl
@@ -243,8 +240,8 @@ prep_synonym_map <- function(write.outfile = TRUE, out.dir = NULL){
   # Note: the same priority will be applied if testing for synonyms.
 # filter - how to apply filtering genes using gene.list. "Strict" (the default) requires that all annotated subunits appear in gene.list. "Relaxed" requires at least one.
   # Note: the same filter will be applied if testing for synonyms.
-# annotation.cutoff - if greater than this fraction of subunits are not matched to axolotl, drop from input.
-  # The default 0.5 means that rows will be dropped where < 50% of input subunits are matched to axolotl. Higher numbers are more permissive; a cutoff of 1 means NONE of the subunits need to be matched.
+# annotation.cutoff - if fewer than this fraction of subunits are matched to axolotl, drop from input.
+  # The default 0.5 means that rows will be dropped where < 50% of input subunits are matched to axolotl.
 # drop.nonhuman - supercedes 'priority'; ignore any non-human annotations and drop from output (default FALSE)
 # check.synonyms - attempt to rescue rows by also testing for synonymous genes? (default FALSE)
 # synonyms - REQUIRED if check.synonyms is TRUE. The output of prep_synonym_map that will be used to test for synonyms.
@@ -282,21 +279,73 @@ make_complex_input <- function(gene.list, annotation.map,
 
   complex_input <- CellChatDB.human$complex
   complex_input[complex_input == ""] <- NA
-  complex_count = rowSums(!(is.na(complex_input)))
-  complex_input$start_na <- complex_count # For later to determine what valid "missingness" is to keep after mapping
+  complex_input <- complex_input %>%
+    rownames_to_column("rowname") %>%
+    mutate(rowname = case_when(rowname %in% c("RA-ALDH1A1", "RA-ALDH1A2", "RA-ALDH1A3") ~ gsub("RA-","", rowname),
+                               TRUE ~ rowname),
+           subunit_2 = case_when(subunit_2 == "ALDH1A1" ~ NA,
+                                 TRUE ~ subunit_2))
+
+  if(isTRUE(check.synonyms)){
+    if(is.null(synonyms)){
+      stop("You must provide a Symbol-Synonym map output by prep_synonym_map to search for synonymous genes.")
+    }
+    complex_input_synonyms <- complex_input %>%
+      left_join(synonyms, by=c("subunit_1" = "Symbol"), relationship = "many-to-many") %>%
+      rename(subunit_1a = value) %>%
+      left_join(synonyms, by=c("subunit_2" = "Symbol"),relationship = "many-to-many") %>%
+      rename(subunit_2a = value)  %>%
+      left_join(synonyms, by=c("subunit_3" = "Symbol"),relationship = "many-to-many") %>%
+      rename(subunit_3a = value) %>%
+      left_join(synonyms, by=c("subunit_4" = "Symbol"),relationship = "many-to-many") %>%
+      rename(subunit_4a = value) %>%
+      left_join(synonyms, by=c("subunit_5" = "Symbol"),relationship = "many-to-many") %>%
+      rename(subunit_5a = value) %>%
+      mutate(subunit_1b = case_when(!is.na(subunit_1) & is.na(subunit_1a) ~ subunit_1,
+                                    !is.na(subunit_1) & !is.na(subunit_1a) ~ paste0(subunit_1,";",subunit_1a),
+                                    is.na(subunit_1) & !is.na(subunit_1a) ~ subunit_1a,
+                                    is.na(subunit_1) & is.na(subunit_1a) ~ NA,
+                                    TRUE ~ "FIX"),
+             subunit_2b = case_when(!is.na(subunit_2) & is.na(subunit_2a) ~ subunit_2,
+                                    !is.na(subunit_2) & !is.na(subunit_2a) ~ paste0(subunit_2,";",subunit_2a),
+                                    is.na(subunit_2) & !is.na(subunit_2a) ~ subunit_2a,
+                                    is.na(subunit_2) & is.na(subunit_2a) ~ NA,
+                                    TRUE ~ "FIX"),
+             subunit_3b = case_when(!is.na(subunit_3) & is.na(subunit_3a) ~ subunit_3,
+                                    !is.na(subunit_3) & !is.na(subunit_3a) ~ paste0(subunit_3,";",subunit_3a),
+                                    is.na(subunit_3) & !is.na(subunit_3a) ~ subunit_3a,
+                                    is.na(subunit_3) & is.na(subunit_3a) ~ NA,
+                                    TRUE ~ "FIX"),
+             subunit_4b = case_when(!is.na(subunit_4) & is.na(subunit_4a) ~ subunit_4,
+                                    !is.na(subunit_4) & !is.na(subunit_4a) ~ paste0(subunit_4,";",subunit_4a),
+                                    is.na(subunit_4) & !is.na(subunit_4a) ~ subunit_4a,
+                                    is.na(subunit_4) & is.na(subunit_4a) ~ NA,
+                                    TRUE ~ "FIX"),
+             subunit_5b = case_when(!is.na(subunit_5) & is.na(subunit_5a) ~ subunit_5,
+                                    !is.na(subunit_5) & !is.na(subunit_5a) ~ paste0(subunit_5,";",subunit_5a),
+                                    is.na(subunit_5) & !is.na(subunit_5a) ~ subunit_5a,
+                                    is.na(subunit_5) & is.na(subunit_5a) ~ NA,
+                                    TRUE ~ "FIX")) %>%
+      select(1, 12:16) %>%
+      separate_longer_delim(subunit_1b, ";") %>%
+      separate_longer_delim(subunit_2b, ";") %>%
+      separate_longer_delim(subunit_3b, ";") %>%
+      separate_longer_delim(subunit_4b, ";") %>%
+      separate_longer_delim(subunit_5b, ";") %>%
+      unique()
+    colnames(complex_input_synonyms) <- colnames(complex_input)
+    complex_count = rowSums(!(is.na(complex_input_synonyms[,-1])))
+    complex_input_synonyms$start_na <- complex_count # For later to determine what valid "missingness" is to keep after mapping
+    complex_input <- complex_input_synonyms
+  } else{
+    complex_count = rowSums(!(is.na(complex_input[,-1])))
+    complex_input$start_na <- complex_count # For later to determine what valid "missingness" is to keep after mapping
+  }
 
   if(isTRUE(drop.nonhuman)){
     message("drop.nonhuman supercedes annotation priority. Only human annotations will be searched for.")
 
-    if(isFALSE(check.synonyms)){
     complex_output_1 <- complex_input %>% # Mapping subunits to axolotl genes
-      rownames_to_column("rowname") %>%
-      mutate(rowname = case_when(rowname %in% c("RA-ALDH1A1", "RA-ALDH1A2", "RA-ALDH1A3") ~ gsub("RA-","", rowname), # RA is a weird case
-                                 TRUE ~ rowname)) %>%
-      mutate(subunit_2 = case_when(subunit_2 == "ALDH1A1" ~ NA, # ONLY ALDH1A1 has a duplicate "complex" where the other ALDHs don't
-                                   TRUE ~ subunit_2),
-             start_na = case_when(rowname == "ALDH1A1" ~ 1,
-                                  TRUE ~ start_na)) %>%
       left_join(annotation.map, by=c("subunit_1" = "human"), relationship = "many-to-many") %>%
       rename(final_1 = full) %>%
       left_join(annotation.map, by=c("subunit_2" = "human"),relationship = "many-to-many") %>%
@@ -307,31 +356,14 @@ make_complex_input <- function(gene.list, annotation.map,
       rename(final_4 = full) %>%
       left_join(annotation.map, by=c("subunit_5" = "human"),relationship = "many-to-many") %>%
       rename(final_5 = full)
-}
-    if(isTRUE(check.synonyms)){
-      complex_output_1 <- check_synonyms(complex_output_1, synonyms,
-                                                  input_type = "complex",
-                                                  priority = priority, filter = filter,
-                                                  annotation.cutoff = annotation.cutoff, drop.nonhuman = TRUE,
-                                                  contains.spaces = contains.spaces,
-                                                  write.outfile = write.outfile, out.dir = writeDir)
+
+    complex_output_1 <- complex_output_1 %>%
+      select(c("rowname", "start_na", starts_with("final"))) %>%
+      unique() %>%
+      `colnames<-`(c("rowname", "start_na", "subunit_1", "subunit_2", "subunit_3", "subunit_4", "subunit_5"))
 
     } else{
-      complex_output_1 <- complex_output_1 %>%
-        select(c("rowname", "start_na", starts_with("final"))) %>%
-        unique() %>%
-        `colnames<-`(c("rowname", "start_na", "subunit_1", "subunit_2", "subunit_3", "subunit_4", "subunit_5"))
-    }
-
-  } else{
     complex_output_1 <- complex_input %>% # Mapping subunits to axolotl genes
-    rownames_to_column("rowname") %>%
-    mutate(rowname = case_when(rowname %in% c("RA-ALDH1A1", "RA-ALDH1A2", "RA-ALDH1A3") ~ gsub("RA-","", rowname), # RA is a weird case
-                               TRUE ~ rowname)) %>%
-    mutate(subunit_2 = case_when(subunit_2 == "ALDH1A1" ~ NA, # ONLY ALDH1A1 has a duplicate "complex" where the other ALDHs don't
-                                 TRUE ~ subunit_2),
-           start_na = case_when(rowname == "ALDH1A1" ~ 1,
-                                TRUE ~ start_na)) %>%
     left_join(annotation.map, by=c("subunit_1" = "human"), relationship = "many-to-many") %>%
     rename(subunit_1a = full) %>%
     left_join(annotation.map, by=c("subunit_2" = "human"),relationship = "many-to-many") %>%
@@ -353,7 +385,7 @@ make_complex_input <- function(gene.list, annotation.map,
     left_join(annotation.map, by=c("subunit_5" = "other"),relationship = "many-to-many") %>%
     rename(subunit_5b = full)
 
-    if(priority %in% c("human")){
+    if(priority == "human"){
       complex_output_1 <- complex_output_1 %>%
         mutate(final_1 = case_when(!is.na(subunit_1a) & is.na(subunit_1b) ~ subunit_1a,
                                    !is.na(subunit_1a) & !is.na(subunit_1b) ~ subunit_1a,
@@ -378,24 +410,12 @@ make_complex_input <- function(gene.list, annotation.map,
                                    !is.na(subunit_5a) & is.na(subunit_5b) ~ subunit_5a,
                                    !is.na(subunit_5a) & !is.na(subunit_5b) ~ subunit_5a,
                                    is.na(subunit_5a) & !is.na(subunit_5b) ~ subunit_5b,
-                                   is.na(subunit_5a) & is.na(subunit_5b) ~ NA))
-
-      if(isTRUE(check.synonyms)){
-        complex_output_1 <- check_synonyms(complex_output_1, synonyms,
-                                                    input_type = "complex",
-                                                    priority = priority, filter = filter,
-                                                    annotation.cutoff = annotation.cutoff, drop.nonhuman = drop.nonhuman,
-                                                    contains.spaces = contains.spaces,
-                                                    write.outfile = write.outfile, out.dir = writeDir)
-      } else{
-
-      complex_output_1 <- complex_output_1 %>%
+                                   is.na(subunit_5a) & is.na(subunit_5b) ~ NA)) %>%
         select(c("rowname", "start_na", starts_with("final"))) %>%
         unique() %>%
         `colnames<-`(c("rowname", "start_na", "subunit_1", "subunit_2", "subunit_3", "subunit_4", "subunit_5"))
-      }
 
-    } else if(priority %in% c("other")){
+    } else if(priority == "other"){
       complex_output_1 <- complex_output_1 %>%
         mutate(final_1 = case_when(!is.na(subunit_1a) & is.na(subunit_1b) ~ subunit_1a,
                                    !is.na(subunit_1a) & !is.na(subunit_1b) ~ subunit_1b,
@@ -425,7 +445,7 @@ make_complex_input <- function(gene.list, annotation.map,
         unique() %>%
         `colnames<-`(c("rowname", "start_na", "subunit_1", "subunit_2", "subunit_3", "subunit_4", "subunit_5"))
 
-    } else if(priority %in% c("none")){
+    } else if(priority == "none"){
       complex_output_1 <- complex_output_1 %>%
         mutate(final_1 = case_when(!is.na(subunit_1a) & is.na(subunit_1b) ~ subunit_1a,
                                    !is.na(subunit_1a) & !is.na(subunit_1b) ~ paste0(subunit_1a,";",subunit_1b),
@@ -466,10 +486,9 @@ make_complex_input <- function(gene.list, annotation.map,
   out_na = rowSums(!(is.na(complex_output_1[,-c(1,2)])))
   complex_output_1$end_na <- out_na
   complex_output_1 <- complex_output_1 %>%
-    filter(end_na != 0) %>% # Filtering out rows with no annotations
     select(rowname, start_na, end_na, starts_with("subunit_")) %>%
-    mutate(na_diff = (start_na - end_na)/start_na) %>%
-    filter(na_diff < annotation.cutoff) %>% # Drop if greater than X fraction of subunits are not annotated
+    mutate(na_diff = end_na/start_na) %>%
+    filter(na_diff >= annotation.cutoff) %>% # Drop if greater than X fraction of subunits are not annotated
     select(-c(start_na, end_na, na_diff)) %>%
     unique()
 
@@ -487,7 +506,7 @@ make_complex_input <- function(gene.list, annotation.map,
   }
 
   filter.genes <- as.data.frame(gene.list) %>% `colnames<-`(c("genes"))
-  if(filter %in% c("relaxed")){
+  if(filter == "relaxed"){
     complex_output_filter <- complex_output_1 %>%
       filter(subunit_1 %in% filter.genes$genes |
                subunit_2 %in% filter.genes$genes |
@@ -495,7 +514,7 @@ make_complex_input <- function(gene.list, annotation.map,
                subunit_4 %in% filter.genes$genes |
                subunit_5 %in% filter.genes$genes)
 
-  } else if(filter %in% c("strict")){
+  } else if(filter == "strict"){
     complex_output_filter <- complex_output_1 %>%
       filter( ((!is.na(subunit_1) & is.na(subunit_2) & is.na(subunit_3) & is.na(subunit_4)) & is.na(subunit_5) & (subunit_1 %in% filter.genes$genes)) |
                 ((!is.na(subunit_1) & !is.na(subunit_2) & is.na(subunit_3) & is.na(subunit_4)) & is.na(subunit_5) & (subunit_1 %in% filter.genes$genes & subunit_2 %in% filter.genes$genes)) |
@@ -507,11 +526,7 @@ make_complex_input <- function(gene.list, annotation.map,
     stop("'filter' must be one of 'strict' or 'relaxed'.")
   }
 
-
-# Next to-do: build in testing for synonyms
-  # Then getting list of interaction matches
-
-  fix_rownames <- complex_output_2
+  fix_rownames <- complex_output_filter
   fix_rownames$new_rowname <- make.unique(fix_rownames$rowname,
                                           sep = ".")
   complex_gene_match <- fix_rownames %>% select(rowname, new_rowname) # For later with interaction input
@@ -522,12 +537,11 @@ make_complex_input <- function(gene.list, annotation.map,
     column_to_rownames("new_rowname") %>%
     select(-rowname)
 
-  writeDir <- out.dir
-  if(is.null(writeDir)){
-    writeDir <- "./"
-  }
-
   if(isTRUE(write.outfile)){
+    writeDir <- out.dir
+    if(is.null(writeDir)){
+      writeDir <- "./"
+    }
     write_delim(complex_output, file.path(writeDir, "complex_input_axolotl.tsv"))
   }
 
@@ -538,6 +552,7 @@ make_complex_input <- function(gene.list, annotation.map,
 # check_synonyms_internal
 # Might not need many of these parameters & just take from input functions
 # probably retain: input, input_type
+# Might be obsolete if just generating inputs pre-mapped with synonyms
 check_synonyms <- function(input, synonym_map,
                                     input_type = c("complex", "interaction", "cofactor", "geneInfo"),
                                     priority = c("human", "other", "none"), filter = c("strict", "relaxed"),
