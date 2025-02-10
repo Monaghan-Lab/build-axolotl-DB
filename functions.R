@@ -266,7 +266,7 @@ make_complex_input <- function(gene.list, annotation.map,
     annotation.cutoff <- 0.5
   }
   if(!annotation.cutoff >= 0 & !annotation.cutoff <= 1 ){
-    stop("'annotation.cutoff' must be a decimal between 0 and 1 (inclusive).")
+    stop("'annotation.cutoff' must be a decimal between 0 and 1.")
   } else if(annotation.cutoff == 0){
     warning("An 'annotation.cutoff' of 0 may produce unintended consequences including an empty output.")
   }
@@ -529,7 +529,7 @@ make_complex_input <- function(gene.list, annotation.map,
   fix_rownames <- complex_output_filter
   fix_rownames$new_rowname <- make.unique(fix_rownames$rowname,
                                           sep = ".")
-  complex_gene_match <- fix_rownames %>% select(rowname, new_rowname) # For later with interaction input
+ # complex_gene_match <- fix_rownames %>% select(rowname, new_rowname) # For later with interaction input
 
   fix_rownames$rowname <- make.unique(fix_rownames$rowname)
 
@@ -549,33 +549,347 @@ make_complex_input <- function(gene.list, annotation.map,
 
 }
 
-# check_synonyms_internal
-# Might not need many of these parameters & just take from input functions
-# probably retain: input, input_type
-# Might be obsolete if just generating inputs pre-mapped with synonyms
-check_synonyms <- function(input, synonym_map,
-                                    input_type = c("complex", "interaction", "cofactor", "geneInfo"),
-                                    priority = c("human", "other", "none"), filter = c("strict", "relaxed"),
-                                    annotation.cutoff = NULL, drop.nonhuman = FALSE,
-                                    contains.spaces = TRUE,
-                                    write.outfile = TRUE, out.dir = NULL){
+# make_cofactor_input
+# REQUIRED:
+# gene.list - the output of prep_gene_list that will be used to filter annotated genes
+# annotation.map - the output of prep_gene_map that will be used to match human genes to axolotl
+#
+# OPTIONS:
+# priority - in the event that there are both human and other annotations for a gene, give priority to either or none. (default "none")
+# Note: the same priority will be applied if testing for synonyms.
+# filter - how to apply filtering genes using gene.list. "Strict" (the default) requires that all annotated cofactors appear in gene.list. "Relaxed" requires at least one.
+  # Note 1: the same filter will be applied if testing for synonyms.
+  # Note 2: the filter is always "strict" for WNT antagonists owing to their number.
+# annotation.cutoff - if fewer than this fraction of cofactors are matched to axolotl, drop from input. (default 0.5)
+# drop.nonhuman - supercedes 'priority'; ignore any non-human annotations and drop from output (default FALSE)
+# check.synonyms - attempt to rescue rows by also testing for synonymous genes? (default FALSE)
+# synonyms - REQUIRED if check.synonyms is TRUE. The output of prep_synonym_map that will be used to test for synonyms.
+# contains.spaces - do the genes output by prep_gene_list contain spaces? (default TRUE)
+# write.outfile - write tab-delimited complex output file (default TRUE)
+# out.dir - directory to output written file to (default working directory)
 
-  if(input_type %in% c("complex")){
+make_cofactor_input <- function(gene.list, annotation.map,
+                                priority = c("human", "other", "none"), filter = c("strict", "relaxed"),
+                                annotation.cutoff = NULL,
+                                drop.nonhuman = FALSE, check.synonyms = FALSE, synonyms = NULL,
+                                contains.spaces = TRUE,
+                                write.outfile = TRUE, out.dir = NULL){
 
-  } else if(input_type %in% c("cofactor")){
+  if(missing(filter)){
+    filter <- "strict"
+  }
+  if(!filter %in% c("strict", "relaxed")){
+    stop("'filter' must be one of 'strict' or 'relaxed'.")
+  }
+  if(is.null(annotation.cutoff)){
+    annotation.cutoff <- 0.5
+  }
+  if(!annotation.cutoff >= 0 & !annotation.cutoff <= 1 ){
+    stop("'annotation.cutoff' must be a decimal between 0 and 1.")
+  } else if(annotation.cutoff == 0){
+    warning("An 'annotation.cutoff' of 0 may produce unintended consequences including an empty output.")
+  }
+  if(missing(priority)){
+    priority <- "none"
+  }
+  if(!priority %in% c("human", "other", "none")){
+    stop("'priority' must be one of 'human', 'other', or 'none'.")
+  }
 
-  } else if(input_type %in% c("interaction")){
+  cofactor_input <- CellChatDB.human$cofactor
+  cofactor_input[cofactor_input == ""] <- NA
+  cofactor_input <- cofactor_input %>%
+    rownames_to_column("rowname")
 
-  } else if(input_type %in% c("geneInfo")){
+  if(isTRUE(check.synonyms)){
+    if(is.null(synonyms)){
+      stop("You must provide a Symbol-Synonym map output by prep_synonym_map to search for synonymous genes.")
+    }
+    cofactor_input_synonyms <- cofactor_input_synonyms %>%
+      left_join(synonyms, by=c("cofactor1" = "Symbol"), relationship = "many-to-many") %>%
+      rename(cofactor1a = value) %>%
+      left_join(synonyms, by=c("cofactor2" = "Symbol"),relationship = "many-to-many") %>%
+      rename(cofactor2a = value)  %>%
+      left_join(synonyms, by=c("cofactor3" = "Symbol"),relationship = "many-to-many") %>%
+      rename(cofactor3a = value) %>%
+      left_join(synonyms, by=c("cofactor4" = "Symbol"),relationship = "many-to-many") %>%
+      rename(cofactor4a = value) %>%
+      left_join(synonyms, by=c("cofactor5" = "Symbol"),relationship = "many-to-many") %>%
+      rename(cofactor5a = value) %>%
+      left_join(synonyms, by=c("cofactor6" = "Symbol"), relationship = "many-to-many") %>%
+      rename(cofactor6a = value) %>%
+      left_join(synonyms, by=c("cofactor7" = "Symbol"),relationship = "many-to-many") %>%
+      rename(cofactor7a = value)  %>%
+      left_join(synonyms, by=c("cofactor8" = "Symbol"),relationship = "many-to-many") %>%
+      rename(cofactor8a = value) %>%
+      left_join(synonyms, by=c("cofactor9" = "Symbol"),relationship = "many-to-many") %>%
+      rename(cofactor9a = value) %>%
+      left_join(synonyms, by=c("cofactor10" = "Symbol"),relationship = "many-to-many") %>%
+      rename(cofactor10a = value) %>%
+      left_join(synonyms, by=c("cofactor11" = "Symbol"), relationship = "many-to-many") %>%
+      rename(cofactor11a = value) %>%
+      left_join(synonyms, by=c("cofactor12" = "Symbol"),relationship = "many-to-many") %>%
+      rename(cofactor12a = value)  %>%
+      left_join(synonyms, by=c("cofactor13" = "Symbol"),relationship = "many-to-many") %>%
+      rename(cofactor13a = value) %>%
+      left_join(synonyms, by=c("cofactor14" = "Symbol"),relationship = "many-to-many") %>%
+      rename(cofactor14a = value) %>%
+      left_join(synonyms, by=c("cofactor15" = "Symbol"),relationship = "many-to-many") %>%
+      rename(cofactor15a = value) %>%
+      left_join(synonyms, by=c("cofactor16" = "Symbol"),relationship = "many-to-many") %>%
+      rename(cofactor16a = value) %>%
+      mutate(cofactor1b = case_when(!is.na(cofactor1) & is.na(cofactor1a) ~ cofactor1,
+                                    !is.na(cofactor1) & !is.na(cofactor1a) ~ paste0(cofactor1,";",cofactor1a),
+                                    is.na(cofactor1) & !is.na(cofactor1a) ~ cofactor1a,
+                                    is.na(cofactor1) & is.na(cofactor1a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor2b = case_when(!is.na(cofactor2) & is.na(cofactor2a) ~ cofactor2,
+                                    !is.na(cofactor2) & !is.na(cofactor2a) ~ paste0(cofactor2,";",cofactor2a),
+                                    is.na(cofactor2) & !is.na(cofactor2a) ~ cofactor2a,
+                                    is.na(cofactor2) & is.na(cofactor2a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor3b = case_when(!is.na(cofactor3) & is.na(cofactor3a) ~ cofactor3,
+                                    !is.na(cofactor3) & !is.na(cofactor3a) ~ paste0(cofactor3,";",cofactor3a),
+                                    is.na(cofactor3) & !is.na(cofactor3a) ~ cofactor3a,
+                                    is.na(cofactor3) & is.na(cofactor3a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor4b = case_when(!is.na(cofactor4) & is.na(cofactor4a) ~ cofactor4,
+                                    !is.na(cofactor4) & !is.na(cofactor4a) ~ paste0(cofactor4,";",cofactor4a),
+                                    is.na(cofactor4) & !is.na(cofactor4a) ~ cofactor4a,
+                                    is.na(cofactor4) & is.na(cofactor4a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor5b = case_when(!is.na(cofactor5) & is.na(cofactor5a) ~ cofactor5,
+                                    !is.na(cofactor5) & !is.na(cofactor5a) ~ paste0(cofactor5,";",cofactor5a),
+                                    is.na(cofactor5) & !is.na(cofactor5a) ~ cofactor5a,
+                                    is.na(cofactor5) & is.na(cofactor5a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor6b = case_when(!is.na(cofactor6) & is.na(cofactor6a) ~ cofactor6,
+                                    !is.na(cofactor6) & !is.na(cofactor6a) ~ paste0(cofactor6,";",cofactor6a),
+                                    is.na(cofactor6) & !is.na(cofactor6a) ~ cofactor6a,
+                                    is.na(cofactor6) & is.na(cofactor6a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor7b = case_when(!is.na(cofactor7) & is.na(cofactor7a) ~ cofactor7,
+                                    !is.na(cofactor7) & !is.na(cofactor7a) ~ paste0(cofactor7,";",cofactor7a),
+                                    is.na(cofactor7) & !is.na(cofactor7a) ~ cofactor7a,
+                                    is.na(cofactor7) & is.na(cofactor7a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor8b = case_when(!is.na(cofactor8) & is.na(cofactor8a) ~ cofactor8,
+                                    !is.na(cofactor8) & !is.na(cofactor8a) ~ paste0(cofactor8,";",cofactor8a),
+                                    is.na(cofactor8) & !is.na(cofactor8a) ~ cofactor8a,
+                                    is.na(cofactor8) & is.na(cofactor8a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor9b = case_when(!is.na(cofactor9) & is.na(cofactor9a) ~ cofactor9,
+                                    !is.na(cofactor9) & !is.na(cofactor9a) ~ paste0(cofactor9,";",cofactor9a),
+                                    is.na(cofactor9) & !is.na(cofactor9a) ~ cofactor9a,
+                                    is.na(cofactor9) & is.na(cofactor9a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor10b = case_when(!is.na(cofactor10) & is.na(cofactor10a) ~ cofactor10,
+                                    !is.na(cofactor10) & !is.na(cofactor10a) ~ paste0(cofactor10,";",cofactor10a),
+                                    is.na(cofactor10) & !is.na(cofactor10a) ~ cofactor10a,
+                                    is.na(cofactor10) & is.na(cofactor10a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor11b = case_when(!is.na(cofactor11) & is.na(cofactor11a) ~ cofactor11,
+                                    !is.na(cofactor11) & !is.na(cofactor11a) ~ paste0(cofactor11,";",cofactor11a),
+                                    is.na(cofactor11) & !is.na(cofactor11a) ~ cofactor11a,
+                                    is.na(cofactor11) & is.na(cofactor11a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor12b = case_when(!is.na(cofactor12) & is.na(cofactor12a) ~ cofactor12,
+                                    !is.na(cofactor12) & !is.na(cofactor12a) ~ paste0(cofactor12,";",cofactor12a),
+                                    is.na(cofactor12) & !is.na(cofactor12a) ~ cofactor12a,
+                                    is.na(cofactor12) & is.na(cofactor12a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor13b = case_when(!is.na(cofactor13) & is.na(cofactor13a) ~ cofactor13,
+                                    !is.na(cofactor13) & !is.na(cofactor13a) ~ paste0(cofactor13,";",cofactor13a),
+                                    is.na(cofactor13) & !is.na(cofactor13a) ~ cofactor13a,
+                                    is.na(cofactor13) & is.na(cofactor13a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor14b = case_when(!is.na(cofactor14) & is.na(cofactor14a) ~ cofactor14,
+                                    !is.na(cofactor14) & !is.na(cofactor14a) ~ paste0(cofactor14,";",cofactor14a),
+                                    is.na(cofactor14) & !is.na(cofactor14a) ~ cofactor14a,
+                                    is.na(cofactor14) & is.na(cofactor14a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor15b = case_when(!is.na(cofactor15) & is.na(cofactor15a) ~ cofactor15,
+                                    !is.na(cofactor15) & !is.na(cofactor15a) ~ paste0(cofactor15,";",cofactor15a),
+                                    is.na(cofactor15) & !is.na(cofactor15a) ~ cofactor15a,
+                                    is.na(cofactor15) & is.na(cofactor15a) ~ NA,
+                                    TRUE ~ "FIX"),
+             cofactor16b = case_when(!is.na(cofactor16) & is.na(cofactor16a) ~ cofactor16,
+                                    !is.na(cofactor16) & !is.na(cofactor16a) ~ paste0(cofactor16,";",cofactor16a),
+                                    is.na(cofactor16) & !is.na(cofactor16a) ~ cofactor16a,
+                                    is.na(cofactor16) & is.na(cofactor16a) ~ NA,
+                                    TRUE ~ "FIX")) %>%
+      select("rowname", ends_with("b")) %>%
+      separate_longer_delim(cofactor1b, ";") %>%
+      separate_longer_delim(cofactor2b, ";") %>%
+      separate_longer_delim(cofactor3b, ";") %>%
+      separate_longer_delim(cofactor4b, ";") %>%
+      separate_longer_delim(cofactor5b, ";") %>%
+      separate_longer_delim(cofactor6b, ";") %>%
+      separate_longer_delim(cofactor7b, ";") %>%
+      separate_longer_delim(cofactor8b, ";") %>%
+      separate_longer_delim(cofactor9b, ";") %>%
+      separate_longer_delim(cofactor10b, ";") %>%
+      separate_longer_delim(cofactor11b, ";") %>%
+      separate_longer_delim(cofactor12b, ";") %>%
+      separate_longer_delim(cofactor13b, ";") %>%
+      separate_longer_delim(cofactor14b, ";") %>%
+      separate_longer_delim(cofactor15b, ";") %>%
+      separate_longer_delim(cofactor16b, ";") %>%
+      unique()
+    colnames(cofactor_input_synonyms) <- colnames(cofactor_input)
+    cofactor_count = rowSums(!(is.na(cofactor_input_synonyms[,-1])))
+    cofactor_input_synonyms$start_na <- cofactor_count # For later to determine what valid "missingness" is to keep after mapping
+    cofactor_input <- cofactor_input_synonyms
+  } else{
+    cofactor_count = rowSums(!(is.na(cofactor_input[,-1])))
+    cofactor_input$start_na <- cofactor_count # For later to determine what valid "missingness" is to keep after mapping
+  }
+
+  if(isTRUE(drop.nonhuman)){
+    message("drop.nonhuman supercedes annotation priority. Only human annotations will be searched for.")
+
+    cofactor_output_1 <- cofactor_input %>% # Mapping subunits to axolotl genes
+      left_join(annotation.map, by=c("cofactor1" = "human"), relationship = "many-to-many") %>%
+      rename(final_1 = full) %>%
+      left_join(annotation.map, by=c("cofactor2" = "human"),relationship = "many-to-many") %>%
+      rename(final_2 = full)  %>%
+      left_join(annotation.map, by=c("cofactor3" = "human"),relationship = "many-to-many") %>%
+      rename(final_3 = full) %>%
+      left_join(annotation.map, by=c("cofactor4" = "human"),relationship = "many-to-many") %>%
+      rename(final_4 = full) %>%
+      left_join(annotation.map, by=c("cofactor5" = "human"),relationship = "many-to-many") %>%
+      rename(final_5 = full)
+
+    cofactor_output_1 <- cofactor_output_1 %>%
+      select(c("rowname", "start_na", starts_with("final"))) %>%
+      unique() %>%
+      `colnames<-`(c("rowname", "start_na", "cofactor1", "cofactor2", "cofactor3", "cofactor4", "cofactor5"))
+
+  } else{
+    cofactor_output_1 <- cofactor_input %>% # Mapping subunits to axolotl genes
+      left_join(annotation.map, by=c("cofactor1" = "human"), relationship = "many-to-many") %>%
+      rename(cofactor1a = full) %>%
+      left_join(annotation.map, by=c("cofactor2" = "human"),relationship = "many-to-many") %>%
+      rename(cofactor2a = full)  %>%
+      left_join(annotation.map, by=c("cofactor3" = "human"),relationship = "many-to-many") %>%
+      rename(cofactor3a = full) %>%
+      left_join(annotation.map, by=c("cofactor4" = "human"),relationship = "many-to-many") %>%
+      rename(cofactor4a = full) %>%
+      left_join(annotation.map, by=c("cofactor5" = "human"),relationship = "many-to-many") %>%
+      rename(cofactor5a = full) %>%
+      left_join(annotation.map, by=c("cofactor1" = "other"), relationship = "many-to-many") %>%
+      rename(cofactor1b = full) %>%
+      left_join(annotation.map, by=c("cofactor2" = "other"),relationship = "many-to-many") %>%
+      rename(cofactor2b = full)  %>%
+      left_join(annotation.map, by=c("cofactor3" = "other"),relationship = "many-to-many") %>%
+      rename(cofactor3b = full) %>%
+      left_join(annotation.map, by=c("cofactor4" = "other"),relationship = "many-to-many") %>%
+      rename(cofactor4b = full) %>%
+      left_join(annotation.map, by=c("cofactor5" = "other"),relationship = "many-to-many") %>%
+      rename(cofactor5b = full)
+
+    if(priority == "human"){
+      cofactor_output_1 <- cofactor_output_1 %>%
+        mutate(final_1 = case_when(!is.na(cofactor1a) & is.na(cofactor1b) ~ cofactor1a,
+                                   !is.na(cofactor1a) & !is.na(cofactor1b) ~ cofactor1a,
+                                   is.na(cofactor1a) & !is.na(cofactor1b) ~ cofactor1b,
+                                   is.na(cofactor1a) & is.na(cofactor1b) ~ NA),
+               final_2 = case_when(is.na(cofactor2) ~ NA,
+                                   !is.na(cofactor2a) & is.na(cofactor2b) ~ cofactor2a,
+                                   !is.na(cofactor2a) & !is.na(cofactor2b) ~ cofactor2a,
+                                   is.na(cofactor2a) & !is.na(cofactor2b) ~ cofactor2b,
+                                   is.na(cofactor2a) & is.na(cofactor2b) ~ NA),
+               final_3 = case_when(is.na(cofactor3) ~ NA,
+                                   !is.na(cofactor3a) & is.na(cofactor3b) ~ cofactor3a,
+                                   !is.na(cofactor3a) & !is.na(cofactor3b) ~ cofactor3a,
+                                   is.na(cofactor3a) & !is.na(cofactor3b) ~ cofactor3b,
+                                   is.na(cofactor3a) & is.na(cofactor3b) ~ NA),
+               final_4 = case_when(is.na(cofactor4) ~ NA,
+                                   !is.na(cofactor4a) & is.na(cofactor4b) ~ cofactor4a,
+                                   !is.na(cofactor4a) & !is.na(cofactor4b) ~ cofactor4a,
+                                   is.na(cofactor4a) & !is.na(cofactor4b) ~ cofactor4b,
+                                   is.na(cofactor4a) & is.na(cofactor4b) ~ NA),
+               final_5 = case_when(is.na(cofactor5) ~ NA,
+                                   !is.na(cofactor5a) & is.na(cofactor5b) ~ cofactor5a,
+                                   !is.na(cofactor5a) & !is.na(cofactor5b) ~ cofactor5a,
+                                   is.na(cofactor5a) & !is.na(cofactor5b) ~ cofactor5b,
+                                   is.na(cofactor5a) & is.na(cofactor5b) ~ NA)) %>%
+        select(c("rowname", "start_na", starts_with("final"))) %>%
+        unique() %>%
+        `colnames<-`(c("rowname", "start_na", "cofactor1", "cofactor2", "cofactor3", "cofactor4", "cofactor5"))
+
+    } else if(priority == "other"){
+      cofactor_output_1 <- cofactor_output_1 %>%
+        mutate(final_1 = case_when(!is.na(cofactor1a) & is.na(cofactor1b) ~ cofactor1a,
+                                   !is.na(cofactor1a) & !is.na(cofactor1b) ~ cofactor1b,
+                                   is.na(cofactor1a) & !is.na(cofactor1b) ~ cofactor1b,
+                                   is.na(cofactor1a) & is.na(cofactor1b) ~ NA),
+               final_2 = case_when(is.na(cofactor2) ~ NA,
+                                   !is.na(cofactor2a) & is.na(cofactor2b) ~ cofactor2a,
+                                   !is.na(cofactor2a) & !is.na(cofactor2b) ~ cofactor2b,
+                                   is.na(cofactor2a) & !is.na(cofactor2b) ~ cofactor2b,
+                                   is.na(cofactor2a) & is.na(cofactor2b) ~ NA),
+               final_3 = case_when(is.na(cofactor3) ~ NA,
+                                   !is.na(cofactor3a) & is.na(cofactor3b) ~ cofactor3a,
+                                   !is.na(cofactor3a) & !is.na(cofactor3b) ~ cofactor3b,
+                                   is.na(cofactor3a) & !is.na(cofactor3b) ~ cofactor3b,
+                                   is.na(cofactor3a) & is.na(cofactor3b) ~ NA),
+               final_4 = case_when(is.na(cofactor4) ~ NA,
+                                   !is.na(cofactor4a) & is.na(cofactor4b) ~ cofactor4a,
+                                   !is.na(cofactor4a) & !is.na(cofactor4b) ~ cofactor4b,
+                                   is.na(cofactor4a) & !is.na(cofactor4b) ~ cofactor4b,
+                                   is.na(cofactor4a) & is.na(cofactor4b) ~ NA),
+               final_5 = case_when(is.na(cofactor5) ~ NA,
+                                   !is.na(cofactor5a) & is.na(cofactor5b) ~ cofactor5a,
+                                   !is.na(cofactor5a) & !is.na(cofactor5b) ~ cofactor5b,
+                                   is.na(cofactor5a) & !is.na(cofactor5b) ~ cofactor5b,
+                                   is.na(cofactor5a) & is.na(cofactor5b) ~ NA)) %>%
+        select(c("rowname", "start_na", starts_with("final"))) %>%
+        unique() %>%
+        `colnames<-`(c("rowname", "start_na", "cofactor1", "cofactor2", "cofactor3", "cofactor4", "cofactor5"))
+
+    } else if(priority == "none"){
+      cofactor_output_1 <- cofactor_output_1 %>%
+        mutate(final_1 = case_when(!is.na(cofactor1a) & is.na(cofactor1b) ~ cofactor1a,
+                                   !is.na(cofactor1a) & !is.na(cofactor1b) ~ paste0(cofactor1a,";",cofactor1b),
+                                   is.na(cofactor1a) & !is.na(cofactor1b) ~ cofactor1b,
+                                   is.na(cofactor1a) & is.na(cofactor1b) ~ NA),
+               final_2 = case_when(is.na(cofactor2) ~ NA,
+                                   !is.na(cofactor2a) & is.na(cofactor2b) ~ cofactor2a,
+                                   !is.na(cofactor2a) & !is.na(cofactor2b) ~ paste0(cofactor2a,";",cofactor2b),
+                                   is.na(cofactor2a) & !is.na(cofactor2b) ~ cofactor2b,
+                                   is.na(cofactor2a) & is.na(cofactor2b) ~ NA),
+               final_3 = case_when(is.na(cofactor3) ~ NA,
+                                   !is.na(cofactor3a) & is.na(cofactor3b) ~ cofactor3a,
+                                   !is.na(cofactor3a) & !is.na(cofactor3b) ~ paste0(cofactor3a,";",cofactor3b),
+                                   is.na(cofactor3a) & !is.na(cofactor3b) ~ cofactor3b,
+                                   is.na(cofactor3a) & is.na(cofactor3b) ~ NA),
+               final_4 = case_when(is.na(cofactor4) ~ NA,
+                                   !is.na(cofactor4a) & is.na(cofactor4b) ~ cofactor4a,
+                                   !is.na(cofactor4a) & !is.na(cofactor4b) ~ paste0(cofactor4a,";",cofactor4b),
+                                   is.na(cofactor4a) & !is.na(cofactor4b) ~ cofactor4b,
+                                   is.na(cofactor4a) & is.na(cofactor4b) ~ NA),
+               final_5 = case_when(is.na(cofactor5) ~ NA,
+                                   !is.na(cofactor5a) & is.na(cofactor5b) ~ cofactor5a,
+                                   !is.na(cofactor5a) & !is.na(cofactor5b) ~ paste0(cofactor5a,";",cofactor5b),
+                                   is.na(cofactor5a) & !is.na(cofactor5b) ~ cofactor5b,
+                                   is.na(cofactor5a) & is.na(cofactor5b) ~ NA)) %>%
+        select(c("rowname", "start_na", starts_with("final"))) %>%
+        separate_longer_delim(final_1,";") %>%
+        separate_longer_delim(final_2, ";") %>%
+        separate_longer_delim(final_3,";") %>%
+        separate_longer_delim(final_4, ";") %>%
+        separate_longer_delim(final_5,";") %>%
+        unique() %>%
+        `colnames<-`(c("rowname", "start_na", "cofactor1", "cofactor2", "cofactor3", "cofactor4", "cofactor5"))
+    }
 
   }
+
 
 }
 
 # Not yet started -----
-# make_cofactor_input
-
-make_cofactor_input <- function(from.CC = CellChatDB.human$cofactor){}
 
 # make_interaction_input
 
