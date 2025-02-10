@@ -575,6 +575,9 @@ make_cofactor_input <- function(gene.list, annotation.map,
                                 contains.spaces = TRUE,
                                 write.outfile = TRUE, out.dir = NULL){
 
+  # TO DO - currently filling out "priority" tabs
+  # TO DO - Handling WNT antagonists + creating final list
+
   if(missing(filter)){
     filter <- "strict"
   }
@@ -758,12 +761,37 @@ make_cofactor_input <- function(gene.list, annotation.map,
       left_join(annotation.map, by=c("cofactor4" = "human"),relationship = "many-to-many") %>%
       rename(final_4 = full) %>%
       left_join(annotation.map, by=c("cofactor5" = "human"),relationship = "many-to-many") %>%
-      rename(final_5 = full)
+      rename(final_5 = full) %>%
+      left_join(annotation.map, by=c("cofactor6" = "human"), relationship = "many-to-many") %>%
+      rename(final_6 = full) %>%
+      left_join(annotation.map, by=c("cofactor7" = "human"),relationship = "many-to-many") %>%
+      rename(final_7 = full)  %>%
+      left_join(annotation.map, by=c("cofactor8" = "human"),relationship = "many-to-many") %>%
+      rename(final_8 = full) %>%
+      left_join(annotation.map, by=c("cofactor9" = "human"),relationship = "many-to-many") %>%
+      rename(final_9 = full) %>%
+      left_join(annotation.map, by=c("cofactor10" = "human"),relationship = "many-to-many") %>%
+      rename(final_10 = full) %>%
+      left_join(annotation.map, by=c("cofactor11" = "human"), relationship = "many-to-many") %>%
+      rename(final_11 = full) %>%
+      left_join(annotation.map, by=c("cofactor12" = "human"),relationship = "many-to-many") %>%
+      rename(final_12 = full)  %>%
+      left_join(annotation.map, by=c("cofactor13" = "human"),relationship = "many-to-many") %>%
+      rename(final_13 = full) %>%
+      left_join(annotation.map, by=c("cofactor14" = "human"),relationship = "many-to-many") %>%
+      rename(final_14 = full) %>%
+      left_join(annotation.map, by=c("cofactor15" = "human"),relationship = "many-to-many") %>%
+      rename(final_15 = full) %>%
+      left_join(annotation.map, by=c("cofactor16" = "human"),relationship = "many-to-many") %>%
+      rename(final_16 = full)
 
     cofactor_output_1 <- cofactor_output_1 %>%
-      select(c("rowname", "start_na", starts_with("final"))) %>%
+      select(c("rowname", "start_na", starts_with("final_"))) %>%
       unique() %>%
-      `colnames<-`(c("rowname", "start_na", "cofactor1", "cofactor2", "cofactor3", "cofactor4", "cofactor5"))
+      `colnames<-`(c("rowname", "start_na", "cofactor1", "cofactor2", "cofactor3",
+                     "cofactor4", "cofactor5", "cofactor6", "cofactor7", "cofactor8",
+                     "cofactor9", "cofactor10", "cofactor11", "cofactor12", "cofactor13",
+                     "cofactor14", "cofactor15", "cofactor16"))
 
   } else{
     cofactor_output_1 <- cofactor_input %>% # Mapping subunits to axolotl genes
@@ -777,6 +805,28 @@ make_cofactor_input <- function(gene.list, annotation.map,
       rename(cofactor4a = full) %>%
       left_join(annotation.map, by=c("cofactor5" = "human"),relationship = "many-to-many") %>%
       rename(cofactor5a = full) %>%
+      left_join(annotation.map, by=c("cofactor6" = "human"), relationship = "many-to-many") %>%
+      rename(cofactor6a = full) %>%
+      left_join(annotation.map, by=c("cofactor7" = "human"),relationship = "many-to-many") %>%
+      rename(cofactor7a = full)  %>%
+      left_join(annotation.map, by=c("cofactor8" = "human"),relationship = "many-to-many") %>%
+      rename(cofactor8a = full) %>%
+      left_join(annotation.map, by=c("cofactor9" = "human"),relationship = "many-to-many") %>%
+      rename(cofactor9a = full) %>%
+      left_join(annotation.map, by=c("cofactor10" = "human"),relationship = "many-to-many") %>%
+      rename(cofactor10a = full) %>%
+      left_join(annotation.map, by=c("cofactor11" = "human"), relationship = "many-to-many") %>%
+      rename(cofactor11a = full) %>%
+      left_join(annotation.map, by=c("cofactor12" = "human"),relationship = "many-to-many") %>%
+      rename(cofactor12a = full)  %>%
+      left_join(annotation.map, by=c("cofactor13" = "human"),relationship = "many-to-many") %>%
+      rename(cofactor13a = full) %>%
+      left_join(annotation.map, by=c("cofactor14" = "human"),relationship = "many-to-many") %>%
+      rename(cofactor14a = full) %>%
+      left_join(annotation.map, by=c("cofactor15" = "human"),relationship = "many-to-many") %>%
+      rename(cofactor15a = full) %>%
+      left_join(annotation.map, by=c("cofactor16" = "human"),relationship = "many-to-many") %>%
+      rename(cofactor16a = full) %>%
       left_join(annotation.map, by=c("cofactor1" = "other"), relationship = "many-to-many") %>%
       rename(cofactor1b = full) %>%
       left_join(annotation.map, by=c("cofactor2" = "other"),relationship = "many-to-many") %>%
@@ -786,7 +836,29 @@ make_cofactor_input <- function(gene.list, annotation.map,
       left_join(annotation.map, by=c("cofactor4" = "other"),relationship = "many-to-many") %>%
       rename(cofactor4b = full) %>%
       left_join(annotation.map, by=c("cofactor5" = "other"),relationship = "many-to-many") %>%
-      rename(cofactor5b = full)
+      rename(cofactor5b = full) %>%
+      left_join(annotation.map, by=c("cofactor6" = "other"), relationship = "many-to-many") %>%
+      rename(cofactor6b = full) %>%
+      left_join(annotation.map, by=c("cofactor7" = "other"),relationship = "many-to-many") %>%
+      rename(cofactor7b = full)  %>%
+      left_join(annotation.map, by=c("cofactor8" = "other"),relationship = "many-to-many") %>%
+      rename(cofactor8b = full) %>%
+      left_join(annotation.map, by=c("cofactor9" = "other"),relationship = "many-to-many") %>%
+      rename(cofactor9b = full) %>%
+      left_join(annotation.map, by=c("cofactor10" = "other"),relationship = "many-to-many") %>%
+      rename(cofactor10b = full) %>%
+      left_join(annotation.map, by=c("cofactor11" = "other"), relationship = "many-to-many") %>%
+      rename(cofactor11b = full) %>%
+      left_join(annotation.map, by=c("cofactor12" = "other"),relationship = "many-to-many") %>%
+      rename(cofactor12b = full)  %>%
+      left_join(annotation.map, by=c("cofactor13" = "other"),relationship = "many-to-many") %>%
+      rename(cofactor13b = full) %>%
+      left_join(annotation.map, by=c("cofactor14" = "other"),relationship = "many-to-many") %>%
+      rename(cofactor14b = full) %>%
+      left_join(annotation.map, by=c("cofactor15" = "other"),relationship = "many-to-many") %>%
+      rename(cofactor15b = full) %>%
+      left_join(annotation.map, by=c("cofactor16" = "other"),relationship = "many-to-many") %>%
+      rename(cofactor16b = full)
 
     if(priority == "human"){
       cofactor_output_1 <- cofactor_output_1 %>%
@@ -816,7 +888,8 @@ make_cofactor_input <- function(gene.list, annotation.map,
                                    is.na(cofactor5a) & is.na(cofactor5b) ~ NA)) %>%
         select(c("rowname", "start_na", starts_with("final"))) %>%
         unique() %>%
-        `colnames<-`(c("rowname", "start_na", "cofactor1", "cofactor2", "cofactor3", "cofactor4", "cofactor5"))
+        `colnames<-`(c("rowname", "start_na", "cofactor1", "cofactor2",
+                       "cofactor3", "cofactor4", "cofactor5"))
 
     } else if(priority == "other"){
       cofactor_output_1 <- cofactor_output_1 %>%
