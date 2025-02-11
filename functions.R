@@ -267,8 +267,8 @@ make_complex_input <- function(gene.list, annotation.map,
   }
   if(!annotation.cutoff >= 0 & !annotation.cutoff <= 1 ){
     stop("'annotation.cutoff' must be a decimal between 0 and 1.")
-  } else if(annotation.cutoff == 0){
-    warning("An 'annotation.cutoff' of 0 may produce unintended consequences including an empty output.")
+  } else if(annotation.cutoff == 1){
+    warning("An 'annotation.cutoff' of 1 may produce unintended results including an empty output.")
   }
   if(missing(priority)){
     priority <- "none"
@@ -590,8 +590,8 @@ make_cofactor_input <- function(gene.list, annotation.map,
   }
   if(!annotation.cutoff >= 0 & !annotation.cutoff <= 1 ){
     stop("'annotation.cutoff' must be a decimal between 0 and 1.")
-  } else if(annotation.cutoff == 0){
-    warning("An 'annotation.cutoff' of 0 may produce unintended consequences including an empty output.")
+  } else if(annotation.cutoff == 1){
+    warning("An 'annotation.cutoff' of 1 may produce unintended results including an empty output.")
   }
   if(missing(priority)){
     priority <- "none"
