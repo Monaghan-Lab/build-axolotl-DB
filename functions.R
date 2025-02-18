@@ -575,8 +575,6 @@ make_cofactor_input <- function(gene.list, annotation.map,
                                 contains.spaces = TRUE,
                                 write.outfile = TRUE, out.dir = NULL){
 
-  # TO DO - Handling WNT antagonists + creating final list
-
   if(missing(filter)){
     filter <- "strict"
   }
@@ -607,7 +605,7 @@ make_cofactor_input <- function(gene.list, annotation.map,
     if(is.null(synonyms)){
       stop("You must provide a Symbol-Synonym map output by prep_synonym_map to search for synonymous genes.")
     }
-    cofactor_input_synonyms <- cofactor_input_synonyms %>%
+    cofactor_input_synonyms <- cofactor_input %>%
       left_join(synonyms, by=c("cofactor1" = "Symbol"), relationship = "many-to-many") %>%
       rename(cofactor1a = value) %>%
       left_join(synonyms, by=c("cofactor2" = "Symbol"),relationship = "many-to-many") %>%
@@ -1160,8 +1158,215 @@ make_cofactor_input <- function(gene.list, annotation.map,
 
   }
 
+  if(isFALSE(contains.spaces)){
+    cofactor_output_1 <- cofactor_output_1 %>%
+      mutate(cofactor1 = gsub(" \\[", "\\[", cofactor1),
+             cofactor2 = case_when(is.na(cofactor2) ~ NA,
+                                   TRUE ~ gsub(" \\[", "\\[", cofactor2)),
+             cofactor3 = case_when(is.na(cofactor3) ~ NA,
+                                   TRUE ~ gsub(" \\[", "\\[", cofactor3)),
+             cofactor4 = case_when(is.na(cofactor4) ~ NA,
+                                   TRUE ~ gsub(" \\[", "\\[", cofactor4)),
+             cofactor5 = case_when(is.na(cofactor5) ~ NA,
+                                   TRUE ~ gsub(" \\[", "\\[", cofactor5)),
+             cofactor6 = case_when(is.na(cofactor6) ~ NA,
+                                   TRUE ~ gsub(" \\[", "\\[", cofactor6)),
+             cofactor7 = case_when(is.na(cofactor7) ~ NA,
+                                   TRUE ~ gsub(" \\[", "\\[", cofactor7)),
+             cofactor8 = case_when(is.na(cofactor8) ~ NA,
+                                   TRUE ~ gsub(" \\[", "\\[", cofactor8)),
+             cofactor9 = case_when(is.na(cofactor9) ~ NA,
+                                   TRUE ~ gsub(" \\[", "\\[", cofactor9)),
+             cofactor10 = case_when(is.na(cofactor10) ~ NA,
+                                    TRUE ~ gsub(" \\[", "\\[", cofactor10)),
+             cofactor11 = case_when(is.na(cofactor11) ~ NA,
+                                    TRUE ~ gsub(" \\[", "\\[", cofactor11)),
+             cofactor12 = case_when(is.na(cofactor12) ~ NA,
+                                    TRUE ~ gsub(" \\[", "\\[", cofactor12)),
+             cofactor13 = case_when(is.na(cofactor13) ~ NA,
+                                    TRUE ~ gsub(" \\[", "\\[", cofactor13)),
+             cofactor14 = case_when(is.na(cofactor14) ~ NA,
+                                    TRUE ~ gsub(" \\[", "\\[", cofactor14)),
+             cofactor15 = case_when(is.na(cofactor15) ~ NA,
+                                    TRUE ~ gsub(" \\[", "\\[", cofactor15)),
+             cofactor16 = case_when(is.na(cofactor16) ~ NA,
+                                    TRUE ~ gsub(" \\[", "\\[", cofactor16)))
+  }
+
+  cofactor_noWNTantagonists <- cofactor_output_1 %>% filter(rowname != "WNT antagonist")
+
+  filter.genes <- gene.list
+  #filter.genes <- as.data.frame(gene.list) %>% `colnames<-`(c("genes"))
+
+  # Handling WNT antagonists
+  { tmp.wnt.antagonist <- cofactor_output_1 %>% filter(rowname == "WNT antagonist")
+    wnt.cofactor.test.antagonist.1 <- tmp.wnt.antagonist %>%
+      filter(cofactor1 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor1) %>%
+      unique()
+    wnt.cofactor.test.antagonist.2 <- tmp.wnt.antagonist %>%
+      filter(cofactor2 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor2) %>%
+      unique()
+    wnt.cofactor.test.antagonist.3 <- tmp.wnt.antagonist %>%
+      filter(cofactor3 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor3) %>%
+      unique()
+    wnt.cofactor.test.antagonist.4 <- tmp.wnt.antagonist %>%
+      filter(cofactor4 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor4) %>%
+      unique()
+    wnt.cofactor.test.antagonist.5 <- tmp.wnt.antagonist %>%
+      filter(cofactor5 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor5) %>%
+      unique()
+    wnt.cofactor.test.antagonist.6 <- tmp.wnt.antagonist %>%
+      filter(cofactor6 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor6) %>%
+      unique()
+    wnt.cofactor.test.antagonist.7 <- tmp.wnt.antagonist %>%
+      filter(cofactor7 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor7) %>%
+      unique()
+    wnt.cofactor.test.antagonist.8 <- tmp.wnt.antagonist %>%
+      filter(cofactor8 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor8) %>%
+      unique()
+    wnt.cofactor.test.antagonist.9 <- tmp.wnt.antagonist %>%
+      filter(cofactor9 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor9) %>%
+      unique()
+    wnt.cofactor.test.antagonist.10 <- tmp.wnt.antagonist %>%
+      filter(cofactor10 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor10) %>%
+      unique()
+    wnt.cofactor.test.antagonist.11 <- tmp.wnt.antagonist %>%
+      filter(cofactor11 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor11) %>%
+      unique()
+    wnt.cofactor.test.antagonist.12 <- tmp.wnt.antagonist %>%
+      filter(cofactor12 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor12) %>%
+      unique()
+    wnt.cofactor.test.antagonist.13 <- tmp.wnt.antagonist %>%
+      filter(cofactor13 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor13) %>%
+      unique()
+    wnt.cofactor.test.antagonist.14 <- tmp.wnt.antagonist %>%
+      filter(cofactor14 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor14) %>%
+      unique()
+    wnt.cofactor.test.antagonist.15 <- tmp.wnt.antagonist %>%
+      filter(cofactor15 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor15) %>%
+      unique()
+    wnt.cofactor.test.antagonist.16 <- tmp.wnt.antagonist %>%
+      filter(cofactor16 %in% filter.genes) %>%
+      select(rowname, start_na, cofactor16) %>%
+      unique()
+
+    antagonist.list <- list(wnt.cofactor.test.antagonist.1,
+                            wnt.cofactor.test.antagonist.2,
+                            wnt.cofactor.test.antagonist.3,
+                            wnt.cofactor.test.antagonist.4,
+                            wnt.cofactor.test.antagonist.5,
+                            wnt.cofactor.test.antagonist.6,
+                            wnt.cofactor.test.antagonist.7,
+                            wnt.cofactor.test.antagonist.8,
+                            wnt.cofactor.test.antagonist.9,
+                            wnt.cofactor.test.antagonist.10,
+                            wnt.cofactor.test.antagonist.11,
+                            wnt.cofactor.test.antagonist.12,
+                            wnt.cofactor.test.antagonist.13,
+                            wnt.cofactor.test.antagonist.14,
+                            wnt.cofactor.test.antagonist.15,
+                            wnt.cofactor.test.antagonist.16)
+    wnt.antagonist.full <- purrr::reduce(.x = antagonist.list, merge, by = c("rowname", "start_na"), all = T)
+    colnames(wnt.antagonist.full) <- colnames(tmp.wnt.antagonist)
+  }
+  # Now filtering on everything but WNT antagonists
+  if(filter == "strict"){
+    cofactor_output_filter <- cofactor_noWNTantagonists %>%
+      filter(!is.na(cofactor1) & cofactor1 %in% filter.genes) %>%
+      filter((is.na(cofactor2)) |
+               (is.na(cofactor3) & cofactor2 %in% filter.genes) |
+               (is.na(cofactor4) & cofactor2 %in% filter.genes & cofactor3 %in% filter.genes) |
+               (is.na(cofactor5) & cofactor2 %in% filter.genes & cofactor3 %in% filter.genes & cofactor4 %in% filter.genes) |
+               (is.na(cofactor6) & cofactor2 %in% filter.genes & cofactor3 %in% filter.genes & cofactor4 %in% filter.genes &
+                  cofactor5 %in% filter.genes) |
+               (is.na(cofactor7) & cofactor2 %in% filter.genes & cofactor3 %in% filter.genes & cofactor4 %in% filter.genes &
+                  cofactor5 %in% filter.genes & cofactor6 %in% filter.genes) |
+               (is.na(cofactor8) & cofactor2 %in% filter.genes & cofactor3 %in% filter.genes & cofactor4 %in% filter.genes &
+                  cofactor5 %in% filter.genes & cofactor6 %in% filter.genes & cofactor7 %in% filter.genes) |
+               (is.na(cofactor9) & cofactor2 %in% filter.genes & cofactor3 %in% filter.genes & cofactor4 %in% filter.genes &
+                  cofactor5 %in% filter.genes & cofactor6 %in% filter.genes & cofactor7 %in% filter.genes & cofactor8 %in% filter.genes) |
+               (is.na(cofactor10) & cofactor2 %in% filter.genes & cofactor3 %in% filter.genes & cofactor4 %in% filter.genes &
+                  cofactor5 %in% filter.genes & cofactor6 %in% filter.genes & cofactor7 %in% filter.genes & cofactor8 %in% filter.genes &
+                  cofactor9 %in% filter.genes) |
+               (is.na(cofactor11) & cofactor2 %in% filter.genes & cofactor3 %in% filter.genes & cofactor4 %in% filter.genes &
+                  cofactor5 %in% filter.genes & cofactor6 %in% filter.genes & cofactor7 %in% filter.genes & cofactor8 %in% filter.genes &
+                  cofactor9 %in% filter.genes & cofactor10 %in% filter.genes) |
+               (is.na(cofactor12) & cofactor2 %in% filter.genes & cofactor3 %in% filter.genes & cofactor4 %in% filter.genes &
+                  cofactor5 %in% filter.genes & cofactor6 %in% filter.genes & cofactor7 %in% filter.genes & cofactor8 %in% filter.genes &
+                  cofactor9 %in% filter.genes & cofactor10 %in% filter.genes & cofactor11 %in% filter.genes) |
+               (is.na(cofactor13) & cofactor2 %in% filter.genes & cofactor3 %in% filter.genes & cofactor4 %in% filter.genes &
+                  cofactor5 %in% filter.genes & cofactor6 %in% filter.genes & cofactor7 %in% filter.genes & cofactor8 %in% filter.genes &
+                 cofactor9 %in% filter.genes & cofactor10 %in% filter.genes & cofactor11 %in% filter.genes & cofactor12 %in% filter.genes) |
+             (is.na(cofactor14) & cofactor2 %in% filter.genes & cofactor3 %in% filter.genes & cofactor4 %in% filter.genes &
+                  cofactor5 %in% filter.genes & cofactor6 %in% filter.genes & cofactor7 %in% filter.genes & cofactor8 %in% filter.genes &
+                  cofactor9 %in% filter.genes & cofactor10 %in% filter.genes & cofactor11 %in% filter.genes & cofactor12 %in% filter.genes &
+                  cofactor13 %in% filter.genes) |
+               (!is.na(cofactor15) & cofactor2 %in% filter.genes & cofactor3 %in% filter.genes & cofactor4 %in% filter.genes &
+                  cofactor5 %in% filter.genes & cofactor6 %in% filter.genes & cofactor7 %in% filter.genes & cofactor8 %in% filter.genes &
+                  cofactor9 %in% filter.genes & cofactor10 %in% filter.genes & cofactor11 %in% filter.genes & cofactor12 %in% filter.genes &
+                  cofactor13 %in% filter.genes & cofactor14 %in% filter.genes) |
+             (!is.na(cofactor16) & cofactor2 %in% filter.genes & cofactor3 %in% filter.genes & cofactor4 %in% filter.genes &
+                cofactor5 %in% filter.genes & cofactor6 %in% filter.genes & cofactor7 %in% filter.genes & cofactor8 %in% filter.genes &
+                cofactor9 %in% filter.genes & cofactor10 %in% filter.genes & cofactor11 %in% filter.genes & cofactor12 %in% filter.genes &
+                cofactor13 %in% filter.genes & cofactor14 %in% filter.genes & cofactor15 %in% filter.genes))
+
+  } else if(filter == "relaxed"){
+    cofactor_output_filter <- cofactor_noWNTantagonists %>%
+      filter(cofactor1 %in% filter.genes |
+               cofactor2 %in% filter.genes |
+               cofactor3 %in% filter.genes |
+               cofactor4 %in% filter.genes |
+               cofactor5 %in% filter.genes |
+               cofactor6 %in% filter.genes |
+               cofactor7 %in% filter.genes |
+               cofactor8 %in% filter.genes |
+               cofactor9 %in% filter.genes |
+               cofactor10 %in% filter.genes |
+               cofactor11 %in% filter.genes |
+               cofactor12 %in% filter.genes |
+               cofactor13 %in% filter.genes |
+               cofactor14 %in% filter.genes |
+               cofactor15 %in% filter.genes |
+               cofactor16 %in% filter.genes)
+  }
+
+  cofactor_output_2 <- rbind(cofactor_output_filter, wnt.antagonist.full) %>% unique()
+
+  out_na = rowSums(!(is.na(cofactor_output_2[,-c(1,2)])))
+  cofactor_output_2$end_na <- out_na
+  cofactor_output_2 <- cofactor_output_2 %>%
+    select(rowname, start_na, end_na, starts_with("cofactor")) %>%
+    mutate(na_diff = end_na/start_na) %>%
+    filter(na_diff >= annotation.cutoff) %>% # Drop if greater than X fraction of subunits are not annotated
+    select(-c(start_na, end_na, na_diff)) %>%
+    unique()
+
+  if(isTRUE(write.outfile)){
+    writeDir <- out.dir
+    if(is.null(writeDir)){
+      writeDir <- "./"
+    }
+    write_delim(cofactor_output_2, file.path(writeDir, "cofactor_input_axolotl.tsv"))
+  }
+  return(cofactor_output_2)
 
 }
+
 
 # Not yet started -----
 
