@@ -80,6 +80,7 @@ prep_gene_list <- function(objects, assay = NULL, contains.spaces = TRUE,
 # contains.spaces - do the genes output by prep_gene_list contain spaces? (default TRUE)
 # write.outfile - write tab-delimited annotation file (default TRUE)
 # out.dir - directory to output written files to (default working directory)
+#
 
 prep_gene_map <- function(gxt.map,
                           apply.filter = FALSE, gene.list = NULL,
