@@ -206,9 +206,9 @@ prep_synonym_map <- function(write.outfile = TRUE, out.dir = NULL){
 
   synonyms <- CellChatDB.human$geneInfo %>%
     select(Symbol, Synonym) %>%
-    filter(Symbol != "7 ER") %>%
-    separate_wider_delim(., Synonym, " ", names_sep = "_", too_few = "align_start") %>% # Fill empties with NA
-    separate_longer_delim(., Symbol, "; ") # Some are separated by ;, creating new rows for each
+    separate_longer_delim(., Symbol, "; ") %>% # Some are separated by ;, creating new rows for each
+    filter(str_count(Symbol, " ") == 0) %>%
+    separate_wider_delim(., Synonym, " ", names_sep = "_", too_few = "align_start")
   synonyms[] <- lapply(synonyms, function(x) gsub(";[[:space:]]?", "", x))
   synonyms[synonyms == ""] <- NA # ex. RPL9 - "synonyms" ARE ";"
 
@@ -217,20 +217,51 @@ prep_synonym_map <- function(write.outfile = TRUE, out.dir = NULL){
   synonyms <- synonyms %>%
     filter(count_na != 0) %>% # If a symbol doesn't have any synonyms, it won't help
     select(-c(count_na)) %>%
-    as.data.frame()
-
-  synonyms_long <- pivot_longer(synonyms, cols = starts_with("Synonym"), values_drop_na = T) %>%
+    as.data.frame() %>%
+    pivot_longer(., cols = starts_with("Synonym"), values_drop_na = T) %>%
     select(-2) %>%
     unique() %>%
     mutate(Symbol = toupper(Symbol),
-           value = toupper(value))
-  er7 <- CellChatDB.human$geneInfo %>%
-    select(Symbol, Synonym) %>%
-    filter(Symbol == "7 ER")
-  colnames(er7) <- c("Symbol", "value")
-  er7 <- er7 %>% mutate(Symbol = toupper(Symbol), value = toupper(value))
+           value = toupper(value)) %>%
+    filter(Symbol != value) %>%
+    unique()
 
-  synonyms_long <- rbind(synonyms_long, er7)
+  # Input is not clean so trying to deal with these special cases for completeness
+  space_synonyms <- CellChatDB.human$geneInfo %>%
+    select(Symbol, Synonym) %>%
+    separate_longer_delim(., Symbol, "; ") %>% # Some are separated by ;, creating new rows for each
+    filter(str_count(Symbol, " ") != 0) %>%
+    filter(!is.na(Synonym))
+  space_synonyms_not_symbol <- space_synonyms %>%
+    filter(str_count(Synonym, " ") == 0) %>%
+    mutate(Symbol = toupper(Symbol),
+           Synonym = toupper(Synonym)) %>%
+    pivot_longer(., cols = starts_with("Synonym"), values_drop_na = T) %>%
+    select(-2) %>%
+    unique()
+
+  synonyms_long <- rbind(synonyms_long, bind)
+
+  space_synonyms_symbol <- space_synonyms %>%
+    filter(str_count(Synonym, " ") != 0) %>%
+    mutate(Symbol = toupper(Symbol), Synonym = toupper(Synonym))
+
+  bind <- space_synonyms_symbol[c(1:3, 5:8, 10),] %>% `colnames<-`(c("Symbol", "value"))
+  synonyms_long <- rbind(synonyms_long, bind)
+
+  # Only three remain, easy enough to fix manually
+  space_synonyms_symbol <- space_synonyms_symbol[c(4,9,11),] %>%
+    mutate(Synonym = gsub("-5", "-5;", Synonym)) %>%
+    mutate(Synonym = gsub("FUSION", "FUSION;", Synonym)) %>%
+    mutate(Synonym = gsub("-ETO", "-ETO;", Synonym)) %>%
+    mutate(Synonym = gsub("-MTG8", "-MTG8;", Synonym)) %>%
+    separate_longer_delim(., Synonym, "; ") %>%
+    mutate(Synonym = gsub(";","", Synonym)) %>%
+    `colnames<-`(c("Symbol", "value"))
+
+  synonyms_long <- rbind(synonyms_long, space_synonyms_symbol) %>% unique()
+  synonyms_long <- synonyms_long %>%
+    filter(Symbol != value)
 
   if(isTRUE(write.outfile)){
     write_delim(synonyms_long, file.path(writeDir, "Symbol_synonym_map.txt"))
