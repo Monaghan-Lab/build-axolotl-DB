@@ -206,6 +206,7 @@ prep_synonym_map <- function(write.outfile = TRUE, out.dir = NULL){
 
   synonyms <- CellChatDB.human$geneInfo %>%
     select(Symbol, Synonym) %>%
+    filter(Symbol != "7 ER") %>%
     separate_wider_delim(., Synonym, " ", names_sep = "_", too_few = "align_start") %>% # Fill empties with NA
     separate_longer_delim(., Symbol, "; ") # Some are separated by ;, creating new rows for each
   synonyms[] <- lapply(synonyms, function(x) gsub(";[[:space:]]?", "", x))
@@ -223,6 +224,13 @@ prep_synonym_map <- function(write.outfile = TRUE, out.dir = NULL){
     unique() %>%
     mutate(Symbol = toupper(Symbol),
            value = toupper(value))
+  er7 <- CellChatDB.human$geneInfo %>%
+    select(Symbol, Synonym) %>%
+    filter(Symbol == "7 ER")
+  colnames(er7) <- c("Symbol", "value")
+  er7 <- er7 %>% mutate(Symbol = toupper(Symbol), value = toupper(value))
+
+  synonyms_long <- rbind(synonyms_long, er7)
 
   if(isTRUE(write.outfile)){
     write_delim(synonyms_long, file.path(writeDir, "Symbol_synonym_map.txt"))
@@ -753,11 +761,12 @@ make_cofactor_input <- function(gene.list, annotation.map,
       separate_longer_delim(cofactor16b, ";") %>%
       unique()
     colnames(cofactor_input_synonyms) <- colnames(cofactor_input)
-    cofactor_count = rowSums(!(is.na(cofactor_input_synonyms[,-1])))
+    cofactor_count <- rowSums(!(is.na(cofactor_input_synonyms[,-1])))
     cofactor_input_synonyms$start_na <- cofactor_count # For later to determine what valid "missingness" is to keep after mapping
     cofactor_input <- cofactor_input_synonyms
+    rm(cofactor_input_synonyms)
   } else{
-    cofactor_count = rowSums(!(is.na(cofactor_input[,-1])))
+    cofactor_count <- rowSums(!(is.na(cofactor_input[,-1])))
     cofactor_input$start_na <- cofactor_count # For later to determine what valid "missingness" is to keep after mapping
   }
 
@@ -805,6 +814,8 @@ make_cofactor_input <- function(gene.list, annotation.map,
                      "cofactor4", "cofactor5", "cofactor6", "cofactor7", "cofactor8",
                      "cofactor9", "cofactor10", "cofactor11", "cofactor12", "cofactor13",
                      "cofactor14", "cofactor15", "cofactor16"))
+
+    rm(cofactor_input)
 
   } else{
     cofactor_output_1 <- cofactor_input %>% # Mapping subunits to axolotl genes
@@ -872,6 +883,8 @@ make_cofactor_input <- function(gene.list, annotation.map,
       rename(cofactor15b = full) %>%
       left_join(annotation.map, by=c("cofactor16" = "other"),relationship = "many-to-many") %>%
       rename(cofactor16b = full)
+
+    rm(cofactor_input)
 
     if(priority == "human"){
       cofactor_output_1 <- cofactor_output_1 %>%
