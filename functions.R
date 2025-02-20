@@ -236,6 +236,7 @@ prep_synonym_map <- function(write.outfile = TRUE, out.dir = NULL){
     write_delim(synonyms_long, file.path(writeDir, "Symbol_synonym_map.txt"))
   }
   return(synonyms_long)
+  print("test")
 }
 
 # make_complex_input - prepare complex input of CellChat DB
