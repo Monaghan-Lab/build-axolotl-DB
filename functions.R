@@ -527,7 +527,7 @@ make_complex_input <- function(gene.list, annotation.map,
   complex_output_1 <- complex_output_1 %>%
     select(rowname, start_na, end_na, starts_with("subunit_")) %>%
     mutate(na_diff = end_na/start_na) %>%
-    filter(na_diff >= annotation.cutoff) %>% # Drop if greater than X fraction of subunits are not annotated
+    filter(na_diff > annotation.cutoff) %>% # Drop if greater than X fraction of subunits are not annotated
     select(-c(start_na, end_na, na_diff)) %>%
     unique()
 
@@ -639,6 +639,8 @@ make_cofactor_input <- function(gene.list, annotation.map,
   cofactor_input[cofactor_input == ""] <- NA
   cofactor_input <- cofactor_input %>%
     rownames_to_column("rowname")
+
+  filter.genes <- gene.list
 
   if(isTRUE(check.synonyms)){
     if(is.null(synonyms)){
@@ -796,15 +798,36 @@ make_cofactor_input <- function(gene.list, annotation.map,
     cofactor_input_synonyms$start_na <- cofactor_count # For later to determine what valid "missingness" is to keep after mapping
     cofactor_input <- cofactor_input_synonyms
     rm(cofactor_input_synonyms)
+
+    cofactor_input_wnts <- cofactor_input %>% filter(rowname == "WNT antagonist")
   } else{
     cofactor_count <- rowSums(!(is.na(cofactor_input[,-1])))
     cofactor_input$start_na <- cofactor_count # For later to determine what valid "missingness" is to keep after mapping
+    cofactor_input_wnts <- cofactor_input %>% filter(rowname == "WNT antagonist")
   }
+
+  cofactor_input_wnts <- cofactor_input %>%
+    rownames_to_column("rowname") %>%
+    filter(rowname == "WNT antagonist") %>%
+    pivot_longer(.,starts_with("cofactor"),names_to = "num") %>%
+    left_join(.,annotation_map, by = c("value" = "human")) %>%
+    rename(humanAnnot = full) %>%
+    left_join(.,annotation_map, by = c("value" = "other")) %>%
+    rename(otherAnnot = full) %>%
+    filter(humanAnnot %in% filter.genes | otherAnnot %in% filter.genes) %>%
+    select(rowname, num, humanAnnot, otherAnnot) %>%
+    unique()
+  cofactor_input_wnts <- rbind(cofactor_input_wnts,
+                               data.frame(rowname = "WNT antagonist", num = "cofactor3",
+                                          humanAnnot = NA, otherAnnot = NA))
+  cofactor_input_wnts <- rbind(cofactor_input_wnts,
+                               data.frame(rowname = "WNT antagonist",
+                                          num = "cofactor16", humanAnnot = NA, otherAnnot = NA))
 
   if(isTRUE(drop.nonhuman)){
     message("drop.nonhuman supercedes annotation priority. Only human annotations will be searched for.")
-
     cofactor_output_1 <- cofactor_input %>% # Mapping subunits to axolotl genes
+      filter(rowname != "WNT antagonist") %>%
       left_join(annotation.map, by=c("cofactor1" = "human"), relationship = "many-to-many") %>%
       rename(final_1 = full) %>%
       left_join(annotation.map, by=c("cofactor2" = "human"),relationship = "many-to-many") %>%
@@ -846,7 +869,10 @@ make_cofactor_input <- function(gene.list, annotation.map,
                      "cofactor9", "cofactor10", "cofactor11", "cofactor12", "cofactor13",
                      "cofactor14", "cofactor15", "cofactor16"))
 
-    rm(cofactor_input)
+    cofactor_input_wnts <- cofactor_input_wnts %>%
+      select(-otherAnnot) %>%
+      unique() %>%
+      mutate(start_na = "16")
 
   } else{
     cofactor_output_1 <- cofactor_input %>% # Mapping subunits to axolotl genes
@@ -1237,12 +1263,8 @@ make_cofactor_input <- function(gene.list, annotation.map,
                                     TRUE ~ gsub(" \\[", "\\[", cofactor16)))
   }
 
-  cofactor_noWNTantagonists <- cofactor_output_1 %>% filter(rowname != "WNT antagonist")
-
-  filter.genes <- gene.list
-  #filter.genes <- as.data.frame(gene.list) %>% `colnames<-`(c("genes"))
-
   # Handling WNT antagonists
+  # Need to find a better way to handle this sooner than letting the df bloat before trimming down - way too inefficient
   { tmp.wnt.antagonist <- cofactor_output_1 %>% filter(rowname == "WNT antagonist")
     wnt.cofactor.test.antagonist.1 <- tmp.wnt.antagonist %>%
       filter(cofactor1 %in% filter.genes) %>%
