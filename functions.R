@@ -226,7 +226,7 @@ prep_synonym_map <- function(write.outfile = TRUE, out.dir = NULL){
     filter(Symbol != value) %>%
     unique()
 
-  # Input is not clean so trying to deal with these special cases for completeness
+  # Input is not clean so trying to deal with a few special cases for completeness
   space_synonyms <- CellChatDB.human$geneInfo %>%
     select(Symbol, Synonym) %>%
     separate_longer_delim(., Symbol, "; ") %>% # Some are separated by ;, creating new rows for each
@@ -240,14 +240,14 @@ prep_synonym_map <- function(write.outfile = TRUE, out.dir = NULL){
     select(-2) %>%
     unique()
 
-  synonyms_long <- rbind(synonyms_long, bind)
+  synonyms <- rbind(synonyms, space_synonyms_not_symbol)
 
   space_synonyms_symbol <- space_synonyms %>%
     filter(str_count(Synonym, " ") != 0) %>%
     mutate(Symbol = toupper(Symbol), Synonym = toupper(Synonym))
 
   bind <- space_synonyms_symbol[c(1:3, 5:8, 10),] %>% `colnames<-`(c("Symbol", "value"))
-  synonyms_long <- rbind(synonyms_long, bind)
+  synonyms <- rbind(synonyms, bind)
 
   # Only three remain, easy enough to fix manually
   space_synonyms_symbol <- space_synonyms_symbol[c(4,9,11),] %>%
@@ -259,14 +259,14 @@ prep_synonym_map <- function(write.outfile = TRUE, out.dir = NULL){
     mutate(Synonym = gsub(";","", Synonym)) %>%
     `colnames<-`(c("Symbol", "value"))
 
-  synonyms_long <- rbind(synonyms_long, space_synonyms_symbol) %>% unique()
-  synonyms_long <- synonyms_long %>%
+  synonyms <- rbind(synonyms, space_synonyms_symbol) %>% unique()
+  synonyms <- synonyms %>%
     filter(Symbol != value)
 
   if(isTRUE(write.outfile)){
-    write_delim(synonyms_long, file.path(writeDir, "Symbol_synonym_map.txt"))
+    write_delim(synonyms, file.path(writeDir, "Symbol_synonym_map.txt"))
   }
-  return(synonyms_long)
+  return(synonyms)
 }
 
 # make_complex_input - prepare complex input of CellChat DB
