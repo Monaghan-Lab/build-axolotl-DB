@@ -614,6 +614,8 @@ make_cofactor_input <- function(gene.list, annotation.map,
                                 contains.spaces = TRUE,
                                 write.outfile = TRUE, out.dir = NULL){
 
+  # TO DO ---- something is up with synonyms, probably not mapping properly so ends up being way too large
+
   if(missing(filter)){
     filter <- "strict"
   }
@@ -799,30 +801,29 @@ make_cofactor_input <- function(gene.list, annotation.map,
     cofactor_input <- cofactor_input_synonyms
     rm(cofactor_input_synonyms)
 
-    #cofactor_input_wnts <- cofactor_input %>% filter(rowname == "WNT antagonist")
   } else{
     cofactor_count <- rowSums(!(is.na(cofactor_input[,-1])))
-    cofactor_input$start_na <- cofactor_count # For later to determine what valid "missingness" is to keep after mapping
-    #cofactor_input_wnts <- cofactor_input %>% filter(rowname == "WNT antagonist")
+    cofactor_input$start_na <- cofactor_count
   }
 
   cofactor_input_wnts <- cofactor_input %>%
-    rownames_to_column("rowname") %>%
     filter(rowname == "WNT antagonist") %>%
-    pivot_longer(.,starts_with("cofactor"),names_to = "num") %>%
+    pivot_longer(.,starts_with("cofactor"), names_to = "num") %>%
     left_join(.,annotation_map, by = c("value" = "human")) %>%
     rename(humanAnnot = full) %>%
     left_join(.,annotation_map, by = c("value" = "other")) %>%
     rename(otherAnnot = full) %>%
     filter(humanAnnot %in% filter.genes | otherAnnot %in% filter.genes) %>%
-    select(rowname, num, humanAnnot, otherAnnot) %>%
+    select(rowname, start_na, num, humanAnnot, otherAnnot) %>%
     unique()
-  cofactor_input_wnts <- rbind(cofactor_input_wnts,
-                               data.frame(rowname = "WNT antagonist", num = "cofactor3",
-                                          humanAnnot = NA, otherAnnot = NA))
-  cofactor_input_wnts <- rbind(cofactor_input_wnts,
-                               data.frame(rowname = "WNT antagonist",
-                                          num = "cofactor16", humanAnnot = NA, otherAnnot = NA))
+
+  col.add <- colnames(cofactor_input)[!colnames(cofactor_input) %in% cofactor_input_wnts$num]
+  col.add <- col.add[!col.add %in% c("rowname", "start_na")]
+  for( i in 1:length(col.add)){
+    df <- data.frame(rowname = "WNT antagonist", start_na = 16, num = col.add[[i]],
+                     humanAnnot = NA, otherAnnot = NA)
+    cofactor_input_wnts <- rbind(cofactor_input_wnts, df)
+  }
 
   if(isTRUE(drop.nonhuman)){
     message("drop.nonhuman supercedes annotation priority. Only human annotations will be searched for.")
@@ -871,8 +872,20 @@ make_cofactor_input <- function(gene.list, annotation.map,
 
     cofactor_input_wnts <- cofactor_input_wnts %>%
       select(-otherAnnot) %>%
-      unique() %>%
-      mutate(start_na = "16")
+      pivot_wider(names_from = num,
+                  names_sep = "",
+                  values_from = humanAnnot)
+
+    for( i in 1:ncol(cofactor_input_wnts)){
+      col <- colnames(cofactor_input_wnts)[[i]]
+      cofactor_input_wnts <- unnest(cofactor_input_wnts, col)
+    }
+
+    cofactor_input_wnts <- cofactor_input_wnts %>%
+      select(rowname, start_na, colnames(cofactor_input)) %>%
+      unique()
+
+    cofactor_output_1 <- rbind(cofactor_output_1, cofactor_input_wnts)
 
   } else{
     cofactor_output_1 <- cofactor_input %>% # Mapping subunits to axolotl genes
@@ -1032,6 +1045,29 @@ make_cofactor_input <- function(gene.list, annotation.map,
                        "cofactor11", "cofactor12", "cofactor13", "cofactor14",
                        "cofactor15", "cofactor16"))
 
+      cofactor_input_wnts <- cofactor_input_wnts %>%
+        mutate(final = case_when(is.na(humanAnnot) & is.na(otherAnnot) ~ NA,
+                                 !is.na(humanAnnot) & is.na(otherAnnot) ~ humanAnnot,
+                                 is.na(humanAnnot) & !is.na(otherAnnot) ~ otherAnnot,
+                                 !is.na(humanAnnot) & !is.na(otherAnnot) ~ humanAnnot)) %>%
+        select(rowname, start_na, num, final) %>%
+        separate_longer_delim(final, ";") %>%
+        unique() %>%
+        pivot_wider(names_from = num,
+                    names_sep="",
+                    values_from = final)
+
+      for( i in 1:ncol(cofactor_input_wnts)){
+        col <- colnames(cofactor_input_wnts)[[i]]
+        cofactor_input_wnts <- unnest(cofactor_input_wnts, col)
+      }
+
+      cofactor_input_wnts <- cofactor_input_wnts %>%
+        select(rowname, start_na, colnames(cofactor_input)) %>%
+        unique()
+
+      cofactor_output_1 <- rbind(cofactor_output_1, cofactor_input_wnts)
+
     } else if(priority == "other"){
       cofactor_output_1 <- cofactor_output_1 %>%
         mutate(final_1 = case_when(!is.na(cofactor1a) & is.na(cofactor1b) ~ cofactor1a,
@@ -1120,6 +1156,29 @@ make_cofactor_input <- function(gene.list, annotation.map,
                        "cofactor6", "cofactor7", "cofactor8", "cofactor9", "cofactor10",
                        "cofactor11", "cofactor12", "cofactor13", "cofactor14",
                        "cofactor15", "cofactor16"))
+
+      cofactor_input_wnts <- cofactor_input_wnts %>%
+        mutate(final = case_when(is.na(humanAnnot) & is.na(otherAnnot) ~ NA,
+                                 !is.na(humanAnnot) & is.na(otherAnnot) ~ humanAnnot,
+                                 is.na(humanAnnot) & !is.na(otherAnnot) ~ otherAnnot,
+                                 !is.na(humanAnnot) & !is.na(otherAnnot) ~ otherAnnot)) %>%
+        select(rowname, start_na, num, final) %>%
+        separate_longer_delim(final, ";") %>%
+        unique() %>%
+        pivot_wider(names_from = num,
+                    names_sep="",
+                    values_from = final)
+
+      for( i in 1:ncol(cofactor_input_wnts)){
+        col <- colnames(cofactor_input_wnts)[[i]]
+        cofactor_input_wnts <- unnest(cofactor_input_wnts, col)
+      }
+
+      cofactor_input_wnts <- cofactor_input_wnts %>%
+        select(rowname, start_na, colnames(cofactor_input)) %>%
+        unique()
+
+      cofactor_output_1 <- rbind(cofactor_output_1, cofactor_input_wnts)
 
     } else if(priority == "none"){
       cofactor_output_1 <- cofactor_output_1 %>%
@@ -1224,6 +1283,29 @@ make_cofactor_input <- function(gene.list, annotation.map,
         `colnames<-`(c("rowname", "start_na", "cofactor1", "cofactor2", "cofactor3", "cofactor4", "cofactor5",
                        "cofactor6", "cofactor7", "cofactor8", "cofactor9", "cofactor10",
                        "cofactor11", "cofactor12", "cofactor13", "cofactor14", "cofactor15", "cofactor16"))
+
+      cofactor_input_wnts <- cofactor_input_wnts %>%
+        mutate(final = case_when(is.na(humanAnnot) & is.na(otherAnnot) ~ NA,
+                                 !is.na(humanAnnot) & is.na(otherAnnot) ~ humanAnnot,
+                                 is.na(humanAnnot) & !is.na(otherAnnot) ~ otherAnnot,
+                                 !is.na(humanAnnot) & !is.na(otherAnnot) ~ paste0(humanAnnot,";",otherAnnot))) %>%
+        select(rowname, start_na, num, final) %>%
+        separate_longer_delim(final, ";") %>%
+        unique() %>%
+        pivot_wider(names_from = num,
+                    names_sep="",
+                    values_from = final)
+
+      for( i in 1:ncol(cofactor_input_wnts)){
+        col <- colnames(cofactor_input_wnts)[[i]]
+        cofactor_input_wnts <- unnest(cofactor_input_wnts, col)
+      }
+
+      cofactor_input_wnts <- cofactor_input_wnts %>%
+        select(rowname, start_na, colnames(cofactor_input)) %>%
+        unique()
+
+      cofactor_output_1 <- rbind(cofactor_output_1, cofactor_input_wnts)
     }
 
   }
@@ -1263,96 +1345,9 @@ make_cofactor_input <- function(gene.list, annotation.map,
                                     TRUE ~ gsub(" \\[", "\\[", cofactor16)))
   }
 
-  # Handling WNT antagonists
-  # Need to find a better way to handle this sooner than letting the df bloat before trimming down - way too inefficient
-  { tmp.wnt.antagonist <- cofactor_output_1 %>% filter(rowname == "WNT antagonist")
-    wnt.cofactor.test.antagonist.1 <- tmp.wnt.antagonist %>%
-      filter(cofactor1 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor1) %>%
-      unique()
-    wnt.cofactor.test.antagonist.2 <- tmp.wnt.antagonist %>%
-      filter(cofactor2 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor2) %>%
-      unique()
-    wnt.cofactor.test.antagonist.3 <- tmp.wnt.antagonist %>%
-      filter(cofactor3 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor3) %>%
-      unique()
-    wnt.cofactor.test.antagonist.4 <- tmp.wnt.antagonist %>%
-      filter(cofactor4 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor4) %>%
-      unique()
-    wnt.cofactor.test.antagonist.5 <- tmp.wnt.antagonist %>%
-      filter(cofactor5 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor5) %>%
-      unique()
-    wnt.cofactor.test.antagonist.6 <- tmp.wnt.antagonist %>%
-      filter(cofactor6 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor6) %>%
-      unique()
-    wnt.cofactor.test.antagonist.7 <- tmp.wnt.antagonist %>%
-      filter(cofactor7 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor7) %>%
-      unique()
-    wnt.cofactor.test.antagonist.8 <- tmp.wnt.antagonist %>%
-      filter(cofactor8 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor8) %>%
-      unique()
-    wnt.cofactor.test.antagonist.9 <- tmp.wnt.antagonist %>%
-      filter(cofactor9 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor9) %>%
-      unique()
-    wnt.cofactor.test.antagonist.10 <- tmp.wnt.antagonist %>%
-      filter(cofactor10 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor10) %>%
-      unique()
-    wnt.cofactor.test.antagonist.11 <- tmp.wnt.antagonist %>%
-      filter(cofactor11 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor11) %>%
-      unique()
-    wnt.cofactor.test.antagonist.12 <- tmp.wnt.antagonist %>%
-      filter(cofactor12 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor12) %>%
-      unique()
-    wnt.cofactor.test.antagonist.13 <- tmp.wnt.antagonist %>%
-      filter(cofactor13 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor13) %>%
-      unique()
-    wnt.cofactor.test.antagonist.14 <- tmp.wnt.antagonist %>%
-      filter(cofactor14 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor14) %>%
-      unique()
-    wnt.cofactor.test.antagonist.15 <- tmp.wnt.antagonist %>%
-      filter(cofactor15 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor15) %>%
-      unique()
-    wnt.cofactor.test.antagonist.16 <- tmp.wnt.antagonist %>%
-      filter(cofactor16 %in% filter.genes) %>%
-      select(rowname, start_na, cofactor16) %>%
-      unique()
-
-    antagonist.list <- list(wnt.cofactor.test.antagonist.1,
-                            wnt.cofactor.test.antagonist.2,
-                            wnt.cofactor.test.antagonist.3,
-                            wnt.cofactor.test.antagonist.4,
-                            wnt.cofactor.test.antagonist.5,
-                            wnt.cofactor.test.antagonist.6,
-                            wnt.cofactor.test.antagonist.7,
-                            wnt.cofactor.test.antagonist.8,
-                            wnt.cofactor.test.antagonist.9,
-                            wnt.cofactor.test.antagonist.10,
-                            wnt.cofactor.test.antagonist.11,
-                            wnt.cofactor.test.antagonist.12,
-                            wnt.cofactor.test.antagonist.13,
-                            wnt.cofactor.test.antagonist.14,
-                            wnt.cofactor.test.antagonist.15,
-                            wnt.cofactor.test.antagonist.16)
-    wnt.antagonist.full <- purrr::reduce(.x = antagonist.list, merge, by = c("rowname", "start_na"), all = T)
-    colnames(wnt.antagonist.full) <- colnames(tmp.wnt.antagonist)
-  }
   # Now filtering on everything but WNT antagonists
   if(filter == "strict"){
-    cofactor_output_filter <- cofactor_noWNTantagonists %>%
+    cofactor_output_filter <- cofactor_output_1 %>%
       filter(!is.na(cofactor1) & cofactor1 %in% filter.genes) %>%
       filter((is.na(cofactor2)) |
                (is.na(cofactor3) & cofactor2 %in% filter.genes) |
@@ -1392,7 +1387,7 @@ make_cofactor_input <- function(gene.list, annotation.map,
                 cofactor13 %in% filter.genes & cofactor14 %in% filter.genes & cofactor15 %in% filter.genes))
 
   } else if(filter == "relaxed"){
-    cofactor_output_filter <- cofactor_noWNTantagonists %>%
+    cofactor_output_filter <- cofactor_output_1 %>%
       filter(cofactor1 %in% filter.genes |
                cofactor2 %in% filter.genes |
                cofactor3 %in% filter.genes |
@@ -1411,7 +1406,7 @@ make_cofactor_input <- function(gene.list, annotation.map,
                cofactor16 %in% filter.genes)
   }
 
-  cofactor_output_2 <- rbind(cofactor_output_filter, wnt.antagonist.full) %>% unique()
+  cofactor_output_2 <- cofactor_output_filter %>% unique()
 
   out_na = rowSums(!(is.na(cofactor_output_2[,-c(1,2)])))
   cofactor_output_2$end_na <- out_na
