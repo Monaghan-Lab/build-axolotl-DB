@@ -799,11 +799,11 @@ make_cofactor_input <- function(gene.list, annotation.map,
     cofactor_input <- cofactor_input_synonyms
     rm(cofactor_input_synonyms)
 
-    cofactor_input_wnts <- cofactor_input %>% filter(rowname == "WNT antagonist")
+    #cofactor_input_wnts <- cofactor_input %>% filter(rowname == "WNT antagonist")
   } else{
     cofactor_count <- rowSums(!(is.na(cofactor_input[,-1])))
     cofactor_input$start_na <- cofactor_count # For later to determine what valid "missingness" is to keep after mapping
-    cofactor_input_wnts <- cofactor_input %>% filter(rowname == "WNT antagonist")
+    #cofactor_input_wnts <- cofactor_input %>% filter(rowname == "WNT antagonist")
   }
 
   cofactor_input_wnts <- cofactor_input %>%
