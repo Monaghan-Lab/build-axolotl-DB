@@ -191,17 +191,25 @@ prep_gene_map <- function(gxt.map,
   return(gxtMap)
 }
 
-# prep_synonym_map
+# prep_synonym_map - prepare Symbol-synonym map for testing synonymous genes in building inputs
+#
+# REQUIRED:
+# gene.list - the output of prep_gene_list that will be used to filter annotated genes
+# gene.map - the output of prep_gene_map that will be used to match human genes to axolotl
 #
 # OPTIONS:
 # write.outfile - write tab-delimited long-form map of Symbol - Synonym (default TRUE)
 # out.dir - directory to output written files to (default working directory)
 
-prep_synonym_map <- function(write.outfile = TRUE, out.dir = NULL){
+prep_synonym_map <- function(gene.list, gene.map, write.outfile = TRUE, out.dir = NULL){
 
   writeDir <- out.dir
   if(is.null(writeDir)){
     writeDir <- "./"
+  }
+
+  if(missing(gene.list)){
+    stop("You must provide a gene list output by prep_gene_list.")
   }
 
   synonyms <- CellChatDB.human$geneInfo %>%
@@ -262,6 +270,25 @@ prep_synonym_map <- function(write.outfile = TRUE, out.dir = NULL){
   synonyms <- rbind(synonyms, space_synonyms_symbol) %>% unique()
   synonyms <- synonyms %>%
     filter(Symbol != value)
+
+  filter.genes <- gene.list
+  annotation.map <- gene.map
+
+  synonym_map_new <- synonyms %>%
+    left_join(annotation.map, by = c("value" = "human"), relationship = "many-to-many") %>%
+    rename(humanAnnot = full) %>%
+    left_join(annotation.map, by = c("value" = "other"), relationship = "many-to-many") %>%
+    rename(otherAnnot = full) %>%
+    left_join(annotation.map, by = c("Symbol" = "human"), relationship = "many-to-many") %>%
+    rename(humanAnnot2 = full) %>%
+    left_join(annotation.map, by = c("Symbol" = "other"), relationship = "many-to-many") %>%
+    rename(otherAnnot2 = full) %>%
+    select(-c(human.x, human.y, other.x, other.y)) %>%
+    filter(humanAnnot %in% filter.genes | otherAnnot %in% filter.genes | humanAnnot2 %in% filter.genes | otherAnnot2 %in% filter.genes) %>%
+    filter(!is.na(humanAnnot) | !is.na(otherAnnot)) %>%
+    select(Symbol, value) %>%
+    unique()
+  synonyms <- synonym_map_new %>% select(Symbol, value) %>% unique()
 
   if(isTRUE(write.outfile)){
     write_delim(synonyms, file.path(writeDir, "Symbol_synonym_map.txt"))
@@ -609,8 +636,6 @@ make_cofactor_input <- function(gene.list, annotation.map,
                                 contains.spaces = TRUE,
                                 write.outfile = TRUE, out.dir = NULL){
 
-  # TO DO ---- something is up with synonyms, probably not mapping properly so ends up being way too large
-
   if(missing(filter)){
     filter <- "strict"
   }
@@ -852,6 +877,7 @@ make_cofactor_input <- function(gene.list, annotation.map,
 
   } else{
     cofactor_output_1 <- cofactor_input %>% # Mapping subunits to axolotl genes
+      filter(rowname != "WNT antagonist") %>%
       left_join(annotation.map, by=c("cofactor1" = "human"), relationship = "many-to-many") %>%
       rename(cofactor1a = full) %>%
       left_join(annotation.map, by=c("cofactor2" = "human"),relationship = "many-to-many") %>%
@@ -1308,7 +1334,7 @@ make_cofactor_input <- function(gene.list, annotation.map,
                                     TRUE ~ gsub(" \\[", "\\[", cofactor16)))
   }
 
-  # Now filtering on everything but WNT antagonists
+  # Now filtering
   if(filter == "strict"){
     cofactor_output_filter <- cofactor_output_1 %>%
       filter(!is.na(cofactor1) & cofactor1 %in% filter.genes) %>%
@@ -1392,11 +1418,30 @@ make_cofactor_input <- function(gene.list, annotation.map,
 }
 
 
-# Not yet started -----
-
 # make_interaction_input
+# REQUIRED:
+# gene.list - the output of prep_gene_list that will be used to filter annotated genes
+# annotation.map - the output of prep_gene_map that will be used to match human genes to axolotl
+#
+# OPTIONS:
+# priority - in the event that there are both human and other annotations for a gene, give priority to either or none. (default "none")
+# Note: the same priority will be applied if testing for synonyms.
+# filter - how to apply filtering genes using gene.list. "Strict" (the default) requires that all annotated cofactors appear in gene.list. "Relaxed" requires at least one.
+# Note 1: the same filter will be applied if testing for synonyms.
+# Note 2: the filter is always "strict" for WNT antagonists owing to their number.
+# annotation.cutoff - if fewer than this fraction of cofactors are matched to axolotl, drop from input. (default 0.5)
+# drop.nonhuman - supercedes 'priority'; ignore any non-human annotations and drop from output (default FALSE)
+# check.synonyms - attempt to rescue rows by also testing for synonymous genes? (default FALSE)
+# synonyms - REQUIRED if check.synonyms is TRUE. The output of prep_synonym_map that will be used to test for synonyms.
+# contains.spaces - do the genes output by prep_gene_list contain spaces? (default TRUE)
+# write.outfile - write tab-delimited complex output file (default TRUE)
+# out.dir - directory to output written file to (default working directory)
 
-make_interaction_input <- function(from.CC = CellChatDB.human$interaction){}
+make_interaction_input <- function(){
+
+}
+
+# Not yet started -----
 
 # make_geneInfo_input
 
