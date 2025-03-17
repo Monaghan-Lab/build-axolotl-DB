@@ -201,7 +201,9 @@ prep_gene_map <- function(gxt.map,
 # write.outfile - write tab-delimited long-form map of Symbol - Synonym (default TRUE)
 # out.dir - directory to output written files to (default working directory)
 
-prep_synonym_map <- function(gene.list, gene.map, write.outfile = TRUE, out.dir = NULL){
+prep_synonym_map <- function(gene.list, gene.map,
+                             write.outfile = TRUE,
+                             out.dir = NULL){
 
   writeDir <- out.dir
   if(is.null(writeDir)){
@@ -636,6 +638,7 @@ make_cofactor_input <- function(gene.list, annotation.map,
                                 contains.spaces = TRUE,
                                 write.outfile = TRUE, out.dir = NULL){
 
+  select=dplyr::select
   if(missing(filter)){
     filter <- "strict"
   }
@@ -862,7 +865,8 @@ make_cofactor_input <- function(gene.list, annotation.map,
       select(-otherAnnot) %>%
       pivot_wider(names_from = num,
                   names_sep = "",
-                  values_from = humanAnnot)
+                  values_from = humanAnnot,
+                  values_fn = list)
 
     for( i in 1:ncol(cofactor_input_wnts)){
       col <- colnames(cofactor_input_wnts)[[i]]
@@ -1044,7 +1048,8 @@ make_cofactor_input <- function(gene.list, annotation.map,
         unique() %>%
         pivot_wider(names_from = num,
                     names_sep="",
-                    values_from = final)
+                    values_from = final,
+                    values_fn = list)
 
       for( i in 1:ncol(cofactor_input_wnts)){
         col <- colnames(cofactor_input_wnts)[[i]]
@@ -1156,7 +1161,8 @@ make_cofactor_input <- function(gene.list, annotation.map,
         unique() %>%
         pivot_wider(names_from = num,
                     names_sep="",
-                    values_from = final)
+                    values_from = final,
+                    values_fn = list)
 
       for( i in 1:ncol(cofactor_input_wnts)){
         col <- colnames(cofactor_input_wnts)[[i]]
@@ -1283,7 +1289,8 @@ make_cofactor_input <- function(gene.list, annotation.map,
         unique() %>%
         pivot_wider(names_from = num,
                     names_sep="",
-                    values_from = final)
+                    values_from = final,
+                    values_fn = list)
 
       for( i in 1:ncol(cofactor_input_wnts)){
         col <- colnames(cofactor_input_wnts)[[i]]
