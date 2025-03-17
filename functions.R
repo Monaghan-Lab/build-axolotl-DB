@@ -1,5 +1,6 @@
 #' Source functions for building custom axolotl CellChat DB
 #' TO DO: inherit params for complex, cofactor, interactions; effectively use all the same
+#' TO DO: how necessary is contains_spaces after creating filter genes and annotation map?
 
 #' prep_gene_list - build gene lists for downstream database filtering
 #'
@@ -1524,9 +1525,9 @@ make_interaction_input <- function(gene.list, annotation.map,
     rm(interaction_input_synonyms)
   }
 
-  # Simple interactions first - one ligand, one receptor
   if(isTRUE(drop.nonhuman)){
     message("drop.nonhuman supercedes annotation priority. Only human annotations will be searched for.")
+    # Simple interactions first - one ligand, one receptor
     interaction_input_simple <- interaction_input %>%
       dplyr::filter(!(ligand %in% rownames(complex) & receptor %in% rownames(complex))) %>%
       left_join(annotation.map, by=c("ligand" = "human"), relationship = "many-to-many") %>%
@@ -1609,19 +1610,15 @@ make_interaction_input <- function(gene.list, annotation.map,
   }
 
   # Complex interactions next - ligand or receptor or both are a complex
-
-  # These have multiple subunits
-  complex_rownames_complex = complex_rownames_simple
-
   interaction_input_complex <- interaction_input %>% # Mapping subunits to axolotl genes, considering both human and NR
-    dplyr::filter(ligand %in% complex_rownames_complex | receptor %in% complex_rownames_complex) %>%
-    left_join(parse_HS, by=c("ligand" = "human"), relationship = "many-to-many") %>%
+    dplyr::filter(ligand %in% rownames(complex) | receptor %in% rownames(complex)) %>%
+    left_join(annotation.map, by=c("ligand" = "human"), relationship = "many-to-many") %>%
     rename(ligand_1a = full) %>%
-    left_join(parse_HS, by=c("receptor" = "human"),relationship = "many-to-many") %>%
+    left_join(annotation.map, by=c("receptor" = "human"),relationship = "many-to-many") %>%
     rename(receptor_1a = full) %>%
-    left_join(parse_NR, by=c("ligand" = "other"), relationship = "many-to-many") %>%
+    left_join(annotation.map, by=c("ligand" = "other"), relationship = "many-to-many") %>%
     rename(ligand_1b = full) %>%
-    left_join(parse_NR, by=c("receptor" = "other"),relationship = "many-to-many") %>%
+    left_join(annotation.map, by=c("receptor" = "other"),relationship = "many-to-many") %>%
     rename(receptor_1b = full) %>% # Not prioritizing human annotations
     mutate(final_ligand = case_when(!is.na(ligand_1a) & is.na(ligand_1b) ~ ligand_1a,
                                     !is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1a,
@@ -1645,12 +1642,6 @@ make_interaction_input <- function(gene.list, annotation.map,
     dplyr::filter(!is.na(receptor)) %>%
     select(colnames(interaction_input)) %>%
     unique()
-
-  # Check
-  interaction_input_complex %>% filter(ligand == "FIX" |
-                                         receptor == "FIX")
-
-  rm(complex_rownames_simple, complex_rownames_complex)
 
   # Now mapping ligands and receptors to rownames of complex input
   interaction_input_complex_rownameMerge <- interaction_input_complex %>%
@@ -1684,201 +1675,6 @@ make_interaction_input <- function(gene.list, annotation.map,
              (ligand %in% rownames(complex_output) & receptor %in% rownames(complex_output)))
 
   interaction_input_bind <- interaction_input_bind_test
-
-  # Now moving on to work on cofactor input before mapping agonists/antagonists/coA-I receptors to interaction input
-
-  # What is dropped from interaction input? ----
-  # TO DO - consider looking at synonyms if gene info manipulation suggests it is valuable
-  interaction_output_test_simple <- interaction_input[!interaction_input$interaction_name %in% interaction_input_bind$interaction_name,] %>% # Mapping subunits to axolotl genes, considering both human and NR
-    dplyr::filter(!(ligand %in% rownames(complex_input) | receptor %in% rownames(complex_input))) %>%
-    left_join(parse_HS, by=c("ligand" = "human"), relationship = "many-to-many") %>%
-    rename(ligand_1a = full) %>%
-    left_join(parse_NR, by=c("ligand" = "other"),relationship = "many-to-many") %>%
-    rename(ligand_1b = full)  %>%
-    left_join(parse_HS, by=c("receptor" = "human"), relationship = "many-to-many") %>%
-    rename(receptor_1a = full) %>%
-    left_join(parse_NR, by=c("receptor" = "other"),relationship = "many-to-many") %>%
-    rename(receptor_1b = full)  %>%
-    left_join(parse_synonyms_long, by = c("ligand" = "Symbol"), relationship = "many-to-many") %>%
-    rename(ligand_1c = value) %>%
-    left_join(parse_synonyms_long, by = c("receptor" = "Symbol"), relationship = "many-to-many") %>%
-    rename(receptor_1c = value) %>%
-    mutate(final_ligand = case_when(!is.na(ligand_1a) & is.na(ligand_1b) ~ ligand_1a,
-                                    !is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1a,
-                                    #!is.na(ligand_1a) & !is.na(ligand_1b) ~ paste0(ligand_1a,";",ligand_1b),
-                                    is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1b,
-                                    is.na(ligand_1a) & is.na(ligand_1b) ~ NA,
-                                    TRUE ~ "FIX"),
-           final_receptor = case_when(!is.na(receptor_1a) & is.na(receptor_1b) ~ receptor_1a,
-                                      !is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1a,
-                                      #!is.na(receptor_1a) & !is.na(receptor_1b) ~ paste0(receptor_1a,";",receptor_1b),
-                                      is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1b,
-                                      is.na(receptor_1a) & is.na(receptor_1b) ~ NA,
-                                      TRUE ~ "FIX")) %>%
-    separate_longer_delim(final_ligand, ";") %>%
-    separate_longer_delim(final_receptor, ";") %>%
-    unique() %>%
-    filter(!(is.na(final_receptor) & is.na(receptor_1c))) %>%
-    filter(!(is.na(final_ligand) & is.na(ligand_1c))) %>%
-    unique() %>%
-    select(-c(ends_with("_1b"), ends_with("_1a"))) %>%
-    unique() %>%
-    left_join(parse_HS, by=c("ligand_1c" = "human"), relationship = "many-to-many") %>%
-    rename(ligand_1d = full) %>%
-    left_join(parse_NR, by=c("ligand_1c" = "other"),relationship = "many-to-many") %>%
-    rename(ligand_1e = full)  %>%
-    left_join(parse_HS, by=c("receptor_1c" = "human"), relationship = "many-to-many") %>%
-    rename(receptor_1d = full) %>%
-    left_join(parse_NR, by=c("receptor_1c" = "other"),relationship = "many-to-many") %>%
-    rename(receptor_1e = full) %>%
-    filter(!(is.na(ligand_1d) & is.na(ligand_1e) & is.na(final_ligand))) %>%
-    filter(!(is.na(receptor_1d) & is.na(receptor_1e) & is.na(final_receptor))) %>%
-    select(-c(ligand_1c, receptor_1c)) %>%
-    unique() %>%
-    mutate(ligand_out = case_when(is.na(final_ligand) & is.na(ligand_1d) & is.na(ligand_1e) ~ NA,
-                                  !is.na(final_ligand) & is.na(ligand_1d) & is.na(ligand_1e) ~ final_ligand,
-                                  !is.na(final_ligand) & !is.na(ligand_1d) & is.na(ligand_1e) ~ paste0(final_ligand,";",ligand_1d),
-                                  !is.na(final_ligand) & !is.na(ligand_1d) & !is.na(ligand_1e) ~ paste0(final_ligand,";",ligand_1d),
-                                  #!is.na(final_ligand) & !is.na(ligand_1d) & !is.na(ligand_1e) ~ paste0(final_ligand,";",ligand_1d,";",ligand_1e),
-                                  is.na(final_ligand) & !is.na(ligand_1d) & !is.na(ligand_1e) ~ ligand_1d,
-                                  #is.na(final_ligand) & !is.na(ligand_1d) & !is.na(ligand_1e) ~ paste0(ligand_1d,";",ligand_1e),
-                                  is.na(final_ligand) & is.na(ligand_1d) & !is.na(ligand_1e) ~ ligand_1e,
-                                  is.na(final_ligand) & !is.na(ligand_1d) & is.na(ligand_1e) ~ ligand_1d),
-           receptor_out = case_when(is.na(final_receptor) & is.na(receptor_1d) & is.na(receptor_1e) ~ NA,
-                                    !is.na(final_receptor) & is.na(receptor_1d) & is.na(receptor_1e) ~ final_receptor,
-                                    !is.na(final_receptor) & !is.na(receptor_1d) & is.na(receptor_1e) ~ paste0(final_receptor,";",receptor_1d),
-                                    !is.na(final_receptor) & !is.na(receptor_1d) & !is.na(receptor_1e) ~ paste0(final_receptor,";",receptor_1d),
-                                    #!is.na(final_receptor) & !is.na(receptor_1d) & !is.na(receptor_1e) ~ paste0(final_receptor,";",receptor_1d,";",receptor_1e),
-                                    is.na(final_receptor) & !is.na(receptor_1d) & !is.na(receptor_1e) ~ receptor_1d,
-                                    #is.na(final_receptor) & !is.na(receptor_1d) & !is.na(receptor_1e) ~ paste0(receptor_1d,";",receptor_1e),
-                                    is.na(final_receptor) & is.na(receptor_1d) & !is.na(receptor_1e) ~ receptor_1e,
-                                    is.na(final_receptor) & !is.na(receptor_1d) & is.na(receptor_1e) ~ receptor_1d)) %>%
-    separate_longer_delim(ligand_out, ";") %>%
-    separate_longer_delim(receptor_out, ";") %>%
-    filter(!is.na(ligand_out)) %>%
-    filter(!is.na(receptor_out)) %>%
-    unique() %>%
-    mutate(ligand = ligand_out,
-           receptor = receptor_out) %>%
-    select("interaction_name", colnames(interaction_input)) %>%
-    unique()
-
-  # Rescued 11 simple interactions
-  interaction_output_test_simple$interaction_name %>% unique()
-
-  # Relaxed filter
-  interaction_output_test_simple <- interaction_output_test_simple %>%
-    filter(ligand %in% sct.test.genes | receptor %in% sct.test.genes)
-
-  # Strict filter
-  interaction_output_test_simple <- interaction_output_test_simple %>%
-    filter(ligand %in% rna.test.genes & receptor %in% rna.test.genes)
-
-  # Rescues 3 complex interactions by ligand
-  interaction_output_test_complex_ligand <- interaction_input[!rownames(interaction_input) %in% interaction_input_bind$interaction_name,] %>% # Mapping subunits to axolotl genes, considering both human and NR
-    dplyr::filter(receptor %in% rownames(complex_input)) %>%
-    left_join(parse_HS, by=c("ligand" = "human"), relationship = "many-to-many") %>%
-    rename(ligand_1a = full) %>%
-    left_join(parse_NR, by=c("ligand" = "other"),relationship = "many-to-many") %>%
-    rename(ligand_1b = full) %>%
-    left_join(parse_synonyms_long, by = c("ligand" = "Symbol"), relationship = "many-to-many") %>%
-    rename(ligand_1c = value) %>%
-    mutate(final_ligand = case_when(!is.na(ligand_1a) & is.na(ligand_1b) ~ ligand_1a,
-                                    !is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1a,
-                                    # !is.na(ligand_1a) & !is.na(ligand_1b) ~ paste0(ligand_1a,";",ligand_1b),
-                                    is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1b,
-                                    is.na(ligand_1a) & is.na(ligand_1b) ~ NA,
-                                    TRUE ~ "FIX")) %>%
-    #separate_longer_delim(final_ligand, ";") %>%
-    unique() %>%
-    filter(!(is.na(final_ligand) & is.na(ligand_1c))) %>%
-    select(-c(ends_with("_1b"), ends_with("_1a"))) %>%
-    unique() %>%
-    left_join(parse_HS, by=c("ligand_1c" = "human"), relationship = "many-to-many") %>%
-    rename(ligand_1d = full) %>%
-    left_join(parse_NR, by=c("ligand_1c" = "other"),relationship = "many-to-many") %>%
-    rename(ligand_1e = full)  %>%
-    filter(!(is.na(ligand_1d) & is.na(ligand_1e) & is.na(final_ligand))) %>%
-    select(-ligand_1c) %>%
-    unique() %>%
-    mutate(ligand_out = case_when(is.na(final_ligand) & is.na(ligand_1d) & is.na(ligand_1e) ~ NA,
-                                  !is.na(final_ligand) & is.na(ligand_1d) & is.na(ligand_1e) ~ final_ligand,
-                                  !is.na(final_ligand) & !is.na(ligand_1d) & is.na(ligand_1e) ~ paste0(final_ligand,";",ligand_1d),
-                                  !is.na(final_ligand) & !is.na(ligand_1d) & !is.na(ligand_1e) ~ paste0(final_ligand,";",ligand_1d),
-                                  is.na(final_ligand) & !is.na(ligand_1d) & !is.na(ligand_1e) ~ paste0(ligand_1d,";",ligand_1e),
-                                  #!is.na(final_ligand) & !is.na(ligand_1d) & !is.na(ligand_1e) ~ paste0(final_ligand,";",ligand_1d,";",ligand_1e),
-                                  # is.na(final_ligand) & !is.na(ligand_1d) & !is.na(ligand_1e) ~ paste0(ligand_1d,";",ligand_1e),
-                                  is.na(final_ligand) & is.na(ligand_1d) & !is.na(ligand_1e) ~ ligand_1e,
-                                  is.na(final_ligand) & !is.na(ligand_1d) & is.na(ligand_1e) ~ ligand_1d)) %>%
-    separate_longer_delim(ligand_out, ";") %>%
-    filter(!is.na(ligand_out)) %>%
-    unique() %>%
-    mutate(ligand = ifelse(!(ligand %in% rownames(complex_input)), ligand_out, ligand)) %>%
-    select("interaction_name", colnames(interaction_input)) %>%
-    unique()
-
-  interaction_output_test_complex_ligand$interaction_name %>% unique()
-
-  # Strict AND relaxed filter
-  interaction_output_test_complex_ligand <- interaction_output_test_complex_ligand %>%
-    filter(ligand %in% sct.test.genes)
-
-  # Returns an error because none are "rescued"
-  interaction_output_test_complex_receptor <- interaction_input[!rownames(interaction_input) %in% interaction_input_bind$interaction_name,] %>% # Mapping subunits to axolotl genes, considering both human and NR
-    dplyr::filter(ligand %in% rownames(complex_input)) %>%
-    left_join(parse_HS, by=c("receptor" = "human"), relationship = "many-to-many") %>%
-    rename(receptor_1a = full) %>%
-    left_join(parse_NR, by=c("receptor" = "other"),relationship = "many-to-many") %>%
-    rename(receptor_1b = full) %>%
-    left_join(parse_synonyms_long, by = c("receptor" = "Symbol"), relationship = "many-to-many") %>%
-    rename(receptor_1c = value) %>%
-    mutate(final_receptor = case_when(!is.na(receptor_1a) & is.na(receptor_1b) ~ receptor_1a,
-                                      #!is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1a,
-                                      !is.na(receptor_1a) & !is.na(receptor_1b) ~ paste0(receptor_1a,";",receptor_1b),
-                                      is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1b,
-                                      is.na(receptor_1a) & is.na(receptor_1b) ~ NA,
-                                      TRUE ~ "FIX")) %>%
-    # separate_longer_delim(final_receptor, ";") %>%
-    unique() %>%
-    filter(!(is.na(final_receptor) & is.na(receptor_1c))) %>%
-    select(-c(ends_with("_1b"), ends_with("_1a"))) %>%
-    unique() %>%
-    left_join(parse_HS, by=c("receptor_1c" = "human"), relationship = "many-to-many") %>%
-    rename(receptor_1d = full) %>%
-    left_join(parse_NR, by=c("receptor_1c" = "other"),relationship = "many-to-many") %>%
-    rename(receptor_1e = full)  %>%
-    filter(!(is.na(receptor_1d) & is.na(receptor_1e) & is.na(final_receptor))) %>%
-    select(-receptor_1c) %>%
-    unique() %>%
-    mutate(receptor_out = case_when(is.na(final_receptor) & is.na(receptor_1d) & is.na(receptor_1e) ~ NA,
-                                    !is.na(final_receptor) & is.na(receptor_1d) & is.na(receptor_1e) ~ final_receptor,
-                                    !is.na(final_receptor) & !is.na(receptor_1d) & is.na(receptor_1e) ~ paste0(final_receptor,";",receptor_1d),
-                                    # !is.na(final_receptor) & !is.na(receptor_1d) & !is.na(receptor_1e) ~ paste0(final_receptor,";",receptor_1d),
-                                    #is.na(final_receptor) & !is.na(receptor_1d) & !is.na(receptor_1e) ~ receptor_1d,
-                                    !is.na(final_receptor) & !is.na(receptor_1d) & !is.na(receptor_1e) ~ paste0(final_receptor,";",receptor_1d,";",receptor_1e),
-                                    is.na(final_receptor) & !is.na(receptor_1d) & !is.na(receptor_1e) ~ paste0(receptor_1d,";",receptor_1e),
-                                    is.na(final_receptor) & is.na(receptor_1d) & !is.na(receptor_1e) ~ receptor_1e,
-                                    is.na(final_receptor) & !is.na(receptor_1d) & is.na(receptor_1e) ~ receptor_1d)) %>%
-    separate_longer_delim(receptor_out, ";") %>%
-    filter(!is.na(receptor_out)) %>%
-    unique() %>%
-    mutate(receptor = ifelse(!(receptor %in% rownames(complex_input)), receptor_out, receptor)) %>%
-    select("interaction_name", colnames(interaction_input)) %>%
-    unique()
-
-  interaction_output_test_complex_receptor$interaction_name %>% unique()
-
-  # Strict AND relaxed filter
-  interaction_output_test_complex_receptor <- interaction_output_test_complex_receptor %>%
-    filter(receptor %in% sct.test.genes)
-
-  #rm(interaction_output_test_complex_ligand, interaction_output_test_complex_receptor, interaction_output_test_simple)
-  interaction_output_withSynonyms <- rbind(interaction_input_bind,
-                                           interaction_output_test_simple,
-                                           interaction_output_test_complex_ligand,
-                                           interaction_output_test_complex_receptor)
-
-  write.csv(interaction_output_withSynonyms, "./for_stats/Interaction.SCTFilter.NoHumanPriority.Relaxed.WithSynonyms_UNMAPPED.csv")
 
   # Map interaction input ant/agonists, co-receptors to cofactor input -----
   interaction_input_cofactor_rownameMerge <- interaction_input_bind %>%
