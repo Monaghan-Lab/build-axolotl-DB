@@ -1,15 +1,15 @@
-# Source functions for building custom axolotl CellChat DB
+#' Source functions for building custom axolotl CellChat DB
 
-# prep_gene_list - build gene lists for downstream database filtering
-#
-# REQUIRED:
-# objects - list of input Seurat objects as RDS files
-#
-# OPTIONS:
-# assay - one of "SCT" or "RNA" (default "RNA")
-# contains.spaces - do the gene names in the input gene lists contain spaces? (default TRUE)
-# write.outfile - write gene list to selected directory (default TRUE)
-# out.dir - directory to output written files to (default working directory)
+#' prep_gene_list - build gene lists for downstream database filtering
+#'
+#' REQUIRED:
+#' @param objects - list of input Seurat objects as RDS files
+#'
+#' OPTIONS:
+#' @param assay - one of "SCT" or "RNA" (default "RNA")
+#' @param contains.spaces - do the gene names in the input gene lists contain spaces? (default TRUE)
+#' @param write.outfile - write gene list to selected directory (default TRUE)
+#' @param out.dir - directory to output written files to (default working directory)
 
 prep_gene_list <- function(objects, assay = NULL, contains.spaces = TRUE,
                            write.outfile = TRUE, out.dir = NULL){
@@ -1502,10 +1502,53 @@ make_interaction_input <- function(gene.list, annotation.map,
     if(is.null(synonyms)){
       stop("You must provide the Symbol-Synonym map output by prep_synonym_map in order to check for synonyms.")
     }
+    # Can only check for synonyms with non-complex ligands/receptors
+    interaction_input_synonyms <- interaction_input %>%
+      left_join(synonyms, by=c("ligand" = "Symbol"), relationship = "many-to-many") %>%
+      rename(ligand1a = value) %>%
+      left_join(synonyms, by=c("receptor" = "Symbol"),relationship = "many-to-many") %>%
+      rename(receptor1a = value) %>%
+      mutate(ligand1b = case_when(!is.na(ligand1a) ~ paste0(ligand, ";", ligand1a),
+                                  TRUE ~ ligand),
+             receptor1b = case_when(!is.na(receptor1a) ~ paste0(receptor,";",receptor1a),
+                                    TRUE ~ receptor)) %>%
+      mutate(ligand = ligand1b, receptor = receptor1b) %>%
+      select(colnames(interaction_input)) %>%
+      separate_longer_delim(ligand,";") %>%
+      separate_longer_delim(receptor,";") %>%
+      unique()
 
+    interaction_input <- interaction_input_synonyms
+    rm(interaction_input_synonyms)
   }
+
   # Simple interactions first - one ligand, one receptor
   if(isTRUE(drop.nonhuman)){
+    interaction_input_simple <- interaction_input %>%
+      dplyr::filter(!(ligand %in% rownames(complex) & receptor %in% rownames(complex))) %>%
+      left_join(annotation.map, by=c("ligand" = "human"), relationship = "many-to-many") %>%
+      rename(ligand_1a = full) %>%
+      left_join(annotation.map, by=c("receptor" = "human"),relationship = "many-to-many") %>%
+      rename(receptor_1a = full) %>%
+      mutate(final_ligand = case_when(!is.na(ligand_1a) & is.na(ligand_1b) ~ ligand_1a,
+                                      !is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1a,
+                                      #!is.na(ligand_1a) & !is.na(ligand_1b) ~ paste0(ligand_1a,";",ligand_1b),
+                                      is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1b,
+                                      is.na(ligand_1a) & is.na(ligand_1b) ~ NA,
+                                      TRUE ~ "FIX"),
+             final_receptor = case_when(!is.na(receptor_1a) & is.na(receptor_1b) ~ receptor_1a,
+                                        !is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1a,
+                                        #!is.na(receptor_1a) & !is.na(receptor_1b) ~ paste0(receptor_1a,";",receptor_1b),
+                                        is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1b,
+                                        is.na(receptor_1a) ~ NA,
+                                        is.na(receptor_1a) & is.na(receptor_1b) ~ NA,
+                                        TRUE ~ "FIX")) %>%
+      mutate(ligand = final_ligand, receptor = final_receptor) %>%
+      select(c(colnames(interaction_input))) %>%
+      filter(!is.na(ligand) & !is.na(receptor)) %>%
+      separate_longer_delim(ligand,";") %>%
+      separate_longer_delim(receptor, ";") %>%
+      unique()
 
   } else{
 
