@@ -1498,12 +1498,31 @@ make_interaction_input <- function(gene.list, annotation.map,
 
   filter.genes <- gene.list
 
-  # Initial complex rownames are listed in ligand or receptor column
-  complex_rownames_simple = rownames(complex.output)
+  if(isTRUE(check.synonyms)){
+    if(is.null(synonyms)){
+      stop("You must provide the Symbol-Synonym map output by prep_synonym_map in order to check for synonyms.")
+    }
 
+  }
+  # Simple interactions first - one ligand, one receptor
+  if(isTRUE(drop.nonhuman)){
+
+  } else{
+
+    if(priority == "human"){
+
+    } else if(priority == "other"){
+
+    } else if(priority == "none"){
+    }
+  }
+
+  # Complex interactions next - ligand or receptor or both are a complex
+
+  # Initial complex rownames are listed in ligand or receptor column
   # These have one ligand and one receptor
-  interaction_input_simple <- interaction_input %>% # Mapping subunits to axolotl genes, considering both human and NR
-    dplyr::filter(!(ligand %in% complex_rownames_simple & receptor %in% complex_rownames_simple)) %>%
+  interaction_input_simple <- interaction_input %>%
+    dplyr::filter(!(ligand %in% rownames(complex) & receptor %in% rownames(complex))) %>%
     left_join(annotation.map, by=c("ligand" = "human"), relationship = "many-to-many") %>%
     rename(ligand_1a = full) %>%
     left_join(annotation.map, by=c("receptor" = "human"),relationship = "many-to-many") %>%
