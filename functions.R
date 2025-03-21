@@ -1464,7 +1464,7 @@ make_interaction_input <- function(gene.list, annotation.map,
 
   # To do ---
   # inherit params from complex, cofactor
-  # Complex interactions
+  # Merging with cofactors
 
   if(missing(filter)){
     filter <- "strict"
@@ -1708,6 +1708,13 @@ make_interaction_input <- function(gene.list, annotation.map,
     }
   }
 
+  if(isFALSE(contains.spaces)){
+    interaction_input_simple <- interaction_input_simple %>%
+      mutate(ligand = gsub(" \\[", "\\[", ligand),
+             receptor = gsub(" \\[", "\\[", receptor)) %>%
+      unique()
+  }
+
   # Initial filter on simple input only
   if(filter == "strict"){
     interaction_input_simple <- interaction_input_simple %>%
@@ -1716,6 +1723,12 @@ make_interaction_input <- function(gene.list, annotation.map,
     interaction_input_simple <- interaction_input_simple %>%
       filter(ligand %in% filter.genes | receptor %in% filter.genes)
   }
+
+  rowname_match <- complex %>%
+    rownames_to_column("rowname") %>%
+    mutate(rowname = gsub("\\..$", "",rowname))
+  rowname_match$new_rowname <- make.unique(rowname_match$rowname, sep = ".")
+  complex_gene_match <- rowname_match %>% select(rowname, new_rowname)
 
   # Now mapping ligands and receptors to rownames of complex input
   interaction_input_complex_rownameMerge <- interaction_input_complex %>%
@@ -1735,22 +1748,22 @@ make_interaction_input <- function(gene.list, annotation.map,
     select(colnames(interaction_input_complex)) %>%
     unique()
 
+  if(isFALSE(contains.spaces)){
+    interaction_input_complex_rownameMerge <- interaction_input_complex_rownameMerge %>%
+      mutate(ligand = gsub(" \\[","\\[", ligand),
+             receptor = gsub(" \\[", "\\[", receptor))
+  }
+
   interaction_input_bind <- rbind(interaction_input_simple, interaction_input_complex_rownameMerge)
+
+  # Another filter - now for both strict and relaxed
   interaction_input_bind <- interaction_input_bind %>%
-    mutate(ligand = gsub(" \\[", "\\[", ligand),
-           receptor = gsub(" \\[", "\\[", receptor)) %>%
-    unique()
+    filter((ligand %in% filter.genes | receptor %in% filter.genes) |
+             (ligand %in% rownames(complex) & receptor %in% filter.genes) |
+             (ligand %in% filter.genes & receptor %in% rownames(complex)) |
+             (ligand %in% rownames(complex) & receptor %in% rownames(complex)))
 
-  # Another filter - for both strict and relaxed
-  interaction_input_bind_test <- interaction_input_bind %>%
-    filter((ligand %in% rna.test.genes | receptor %in% rna.test.genes) |
-             (ligand %in% rownames(complex_output) & receptor %in% rna.test.genes) |
-             (ligand %in% rna.test.genes & receptor %in% rownames(complex_output)) |
-             (ligand %in% rownames(complex_output) & receptor %in% rownames(complex_output)))
-
-  interaction_input_bind <- interaction_input_bind_test
-
-  # Map interaction input ant/agonists, co-receptors to cofactor input -----
+  # Map interaction input ant/agonists, co-receptors to cofactor input
   interaction_input_cofactor_rownameMerge <- interaction_input_bind %>%
     mutate(agonist = case_when(agonist == "" ~ NA,
                                TRUE ~ agonist),
