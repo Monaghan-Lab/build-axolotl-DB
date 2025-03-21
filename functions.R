@@ -1464,7 +1464,6 @@ make_interaction_input <- function(gene.list, annotation.map,
 
   # To do ---
   # inherit params from complex, cofactor
-  # Is annotation cutoff relevant? Probably not
   # Complex interactions
 
   if(missing(filter)){
@@ -1473,14 +1472,14 @@ make_interaction_input <- function(gene.list, annotation.map,
   if(!filter %in% c("strict", "relaxed")){
     stop("'filter' must be one of 'strict' or 'relaxed'.")
   }
-  if(is.null(annotation.cutoff)){
-    annotation.cutoff <- 0.5
-  }
-  if(!annotation.cutoff >= 0 & !annotation.cutoff <= 1 ){
-    stop("'annotation.cutoff' must be a decimal between 0 and 1.")
-  } else if(annotation.cutoff == 1){
-    warning("An 'annotation.cutoff' of 1 may produce unintended results including an empty output.")
-  }
+  #if(is.null(annotation.cutoff)){
+  #  annotation.cutoff <- 0.5
+  #}
+  #if(!annotation.cutoff >= 0 & !annotation.cutoff <= 1 ){
+  #  stop("'annotation.cutoff' must be a decimal between 0 and 1.")
+  #} else if(annotation.cutoff == 1){
+  #  warning("An 'annotation.cutoff' of 1 may produce unintended results including an empty output.")
+  #}
   if(missing(priority)){
     priority <- "none"
   }
@@ -1537,6 +1536,26 @@ make_interaction_input <- function(gene.list, annotation.map,
       mutate(ligand = ligand_1a, receptor = receptor_1a) %>%
       select(c(colnames(interaction_input))) %>%
       filter(!is.na(ligand) & !is.na(receptor)) %>%
+      unique()
+
+    interaction_input_complex <- interaction_input %>%
+      dplyr::filter(ligand %in% rownames(complex) | receptor %in% rownames(complex)) %>%
+      left_join(annotation.map, by=c("ligand" = "human"), relationship = "many-to-many") %>%
+      rename(ligand_1a = full) %>%
+      left_join(annotation.map, by=c("receptor" = "human"),relationship = "many-to-many") %>%
+      rename(receptor_1a = full) %>%
+      mutate(final_ligand = case_when(!is.na(ligand_1a) ~ ligand_1a,
+                                      is.na(ligand_1a) & ligand %in% rownames(complex) ~ ligand,
+                                      is.na(ligand_1a) & !ligand %in% rownames(complex) ~ NA,
+                                      TRUE ~ "FIX"),
+             final_receptor = case_when(!is.na(receptor_1a) ~ receptor_1a,
+                                        is.na(receptor_1a) & receptor %in% rownames(complex) ~ receptor,
+                                        is.na(receptor_1a) & !receptor %in% rownames(complex) ~ NA,
+                                        TRUE ~ "FIX")) %>%
+      mutate(ligand = final_ligand, receptor = final_receptor) %>%
+      dplyr::filter(!is.na(ligand)) %>%
+      dplyr::filter(!is.na(receptor)) %>%
+      select(colnames(interaction_input)) %>%
       unique()
 
   } else{
