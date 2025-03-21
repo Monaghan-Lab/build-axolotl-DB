@@ -1585,6 +1585,34 @@ make_interaction_input <- function(gene.list, annotation.map,
         filter(!is.na(ligand) & !is.na(receptor)) %>%
         unique()
 
+      interaction_input_complex <- interaction_input %>%
+        dplyr::filter(ligand %in% rownames(complex) | receptor %in% rownames(complex)) %>%
+        left_join(annotation.map, by=c("ligand" = "human"), relationship = "many-to-many") %>%
+        rename(ligand_1a = full) %>%
+        left_join(annotation.map, by=c("receptor" = "human"),relationship = "many-to-many") %>%
+        rename(receptor_1a = full) %>%
+        left_join(annotation.map, by=c("ligand" = "other"), relationship = "many-to-many") %>%
+        rename(ligand_1b = full) %>%
+        left_join(annotation.map, by=c("receptor" = "other"),relationship = "many-to-many") %>%
+        rename(receptor_1b = full) %>%
+        mutate(final_ligand = case_when(!is.na(ligand_1a) & is.na(ligand_1b) ~ ligand_1a,
+                                        !is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1a,
+                                        is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1b,
+                                        is.na(ligand_1a) & is.na(ligand_1b) ~ NA,
+                                        TRUE ~ "FIX"),
+               final_receptor = case_when(!is.na(receptor_1a) & is.na(receptor_1b) ~ receptor_1a,
+                                          !is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1a,
+                                          is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1b,
+                                          is.na(receptor_1a) & is.na(receptor_1b) ~ NA,
+                                          TRUE ~ "FIX")) %>%
+        mutate(ligand = ifelse(!(ligand %in% rownames(complex)), final_ligand, ligand)) %>%
+        mutate(receptor = ifelse(!(receptor %in% rownames(complex)), final_receptor, receptor)) %>%
+        unique() %>%
+        dplyr::filter(!is.na(ligand)) %>%
+        dplyr::filter(!is.na(receptor)) %>%
+        select(colnames(interaction_input)) %>%
+        unique()
+
     } else if(priority == "other"){
       interaction_input_simple <- interaction_input_simple %>%
         mutate(final_ligand = case_when(!is.na(ligand_1a) & is.na(ligand_1b) ~ ligand_1a,
@@ -1598,6 +1626,35 @@ make_interaction_input <- function(gene.list, annotation.map,
         mutate(ligand = final_ligand, receptor = final_receptor) %>%
         select(c(colnames(interaction_input))) %>%
         filter(!is.na(ligand) & !is.na(receptor)) %>%
+        unique()
+
+      # Complex interactions next - ligand or receptor or both are a complex
+      interaction_input_complex <- interaction_input %>%
+        dplyr::filter(ligand %in% rownames(complex) | receptor %in% rownames(complex)) %>%
+        left_join(annotation.map, by=c("ligand" = "human"), relationship = "many-to-many") %>%
+        rename(ligand_1a = full) %>%
+        left_join(annotation.map, by=c("receptor" = "human"),relationship = "many-to-many") %>%
+        rename(receptor_1a = full) %>%
+        left_join(annotation.map, by=c("ligand" = "other"), relationship = "many-to-many") %>%
+        rename(ligand_1b = full) %>%
+        left_join(annotation.map, by=c("receptor" = "other"),relationship = "many-to-many") %>%
+        rename(receptor_1b = full) %>%
+        mutate(final_ligand = case_when(!is.na(ligand_1a) & is.na(ligand_1b) ~ ligand_1a,
+                                        !is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1b,
+                                        is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1b,
+                                        is.na(ligand_1a) & is.na(ligand_1b) ~ NA,
+                                        TRUE ~ "FIX"),
+               final_receptor = case_when(!is.na(receptor_1a) & is.na(receptor_1b) ~ receptor_1a,
+                                          !is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1b,
+                                          is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1b,
+                                          is.na(receptor_1a) & is.na(receptor_1b) ~ NA,
+                                          TRUE ~ "FIX")) %>%
+        mutate(ligand = ifelse(!(ligand %in% rownames(complex)), final_ligand, ligand)) %>%
+        mutate(receptor = ifelse(!(receptor %in% rownames(complex)), final_receptor, receptor)) %>%
+        unique() %>%
+        dplyr::filter(!is.na(ligand)) %>%
+        dplyr::filter(!is.na(receptor)) %>%
+        select(colnames(interaction_input)) %>%
         unique()
 
     } else if(priority == "none"){
@@ -1617,9 +1674,41 @@ make_interaction_input <- function(gene.list, annotation.map,
         filter(!is.na(ligand) & !is.na(receptor)) %>%
         unique()
 
+      # Complex interactions next - ligand or receptor or both are a complex
+      interaction_input_complex <- interaction_input %>%
+        dplyr::filter(ligand %in% rownames(complex) | receptor %in% rownames(complex)) %>%
+        left_join(annotation.map, by=c("ligand" = "human"), relationship = "many-to-many") %>%
+        rename(ligand_1a = full) %>%
+        left_join(annotation.map, by=c("receptor" = "human"),relationship = "many-to-many") %>%
+        rename(receptor_1a = full) %>%
+        left_join(annotation.map, by=c("ligand" = "other"), relationship = "many-to-many") %>%
+        rename(ligand_1b = full) %>%
+        left_join(annotation.map, by=c("receptor" = "other"),relationship = "many-to-many") %>%
+        rename(receptor_1b = full) %>%
+        mutate(final_ligand = case_when(!is.na(ligand_1a) & is.na(ligand_1b) ~ ligand_1a,
+                                        !is.na(ligand_1a) & !is.na(ligand_1b) ~ paste0(ligand_1a,";",ligand_1b),
+                                        is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1b,
+                                        is.na(ligand_1a) & is.na(ligand_1b) ~ NA,
+                                        TRUE ~ "FIX"),
+               final_receptor = case_when(!is.na(receptor_1a) & is.na(receptor_1b) ~ receptor_1a,
+                                          !is.na(receptor_1a) & !is.na(receptor_1b) ~ paste0(receptor_1a,";",receptor_1b),
+                                          is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1b,
+                                          is.na(receptor_1a) & is.na(receptor_1b) ~ NA,
+                                          TRUE ~ "FIX")) %>%
+        mutate(ligand = ifelse(!(ligand %in% rownames(complex)), final_ligand, ligand)) %>%
+        mutate(receptor = ifelse(!(receptor %in% rownames(complex)), final_receptor, receptor)) %>%
+        separate_longer_delim(ligand,";") %>%
+        separate_longer_delim(receptor, ";") %>%
+        unique() %>%
+        dplyr::filter(!is.na(ligand)) %>%
+        dplyr::filter(!is.na(receptor)) %>%
+        select(colnames(interaction_input)) %>%
+        unique()
+
     }
   }
 
+  # Initial filter on simple input only
   if(filter == "strict"){
     interaction_input_simple <- interaction_input_simple %>%
       filter(ligand %in% filter.genes & receptor %in% filter.genes)
@@ -1627,40 +1716,6 @@ make_interaction_input <- function(gene.list, annotation.map,
     interaction_input_simple <- interaction_input_simple %>%
       filter(ligand %in% filter.genes | receptor %in% filter.genes)
   }
-
-  # Complex interactions next - ligand or receptor or both are a complex
-  interaction_input_complex <- interaction_input %>% # Mapping subunits to axolotl genes, considering both human and NR
-    dplyr::filter(ligand %in% rownames(complex) | receptor %in% rownames(complex)) %>%
-    left_join(annotation.map, by=c("ligand" = "human"), relationship = "many-to-many") %>%
-    rename(ligand_1a = full) %>%
-    left_join(annotation.map, by=c("receptor" = "human"),relationship = "many-to-many") %>%
-    rename(receptor_1a = full) %>%
-    left_join(annotation.map, by=c("ligand" = "other"), relationship = "many-to-many") %>%
-    rename(ligand_1b = full) %>%
-    left_join(annotation.map, by=c("receptor" = "other"),relationship = "many-to-many") %>%
-    rename(receptor_1b = full) %>% # Not prioritizing human annotations
-    mutate(final_ligand = case_when(!is.na(ligand_1a) & is.na(ligand_1b) ~ ligand_1a,
-                                    !is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1a,
-                                    #!is.na(ligand_1a) & !is.na(ligand_1b) ~ paste0(ligand_1a,";",ligand_1b),
-                                    is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1b,
-                                    is.na(ligand_1a) & is.na(ligand_1b) ~ NA,
-                                    TRUE ~ "FIX"),
-           final_receptor = case_when(!is.na(receptor_1a) & is.na(receptor_1b) ~ receptor_1a,
-                                      !is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1a,
-                                      #!is.na(receptor_1a) & !is.na(receptor_1b) ~ paste0(receptor_1a,";",receptor_1b),
-                                      is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1b,
-                                      is.na(receptor_1a) ~ NA,
-                                      is.na(receptor_1a) & is.na(receptor_1b) ~ NA,
-                                      TRUE ~ "FIX")) %>%
-    mutate(ligand = ifelse(!(ligand %in% complex_rownames_complex ), final_ligand, ligand)) %>%
-    mutate(receptor = ifelse(!(receptor %in% complex_rownames_complex ), final_receptor, receptor)) %>%
-    separate_longer_delim(ligand,";") %>%
-    separate_longer_delim(receptor, ";") %>%
-    unique() %>%
-    dplyr::filter(!is.na(ligand)) %>%
-    dplyr::filter(!is.na(receptor)) %>%
-    select(colnames(interaction_input)) %>%
-    unique()
 
   # Now mapping ligands and receptors to rownames of complex input
   interaction_input_complex_rownameMerge <- interaction_input_complex %>%
