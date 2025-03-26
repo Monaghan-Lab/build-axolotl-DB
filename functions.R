@@ -1421,6 +1421,12 @@ make_cofactor_input <- function(gene.list, annotation.map,
     select(-c(start_na, end_na, na_diff)) %>%
     unique()
 
+  rownames(cofactor_output_2) <- NULL
+  cofactor_output_2$interaction <- make.unique(cofactor_output_2$rowname, sep = ".")
+  cofactor_output_2 <- cofactor_output_2 %>%
+    column_to_rownames("interaction") %>%
+    select(-rowname)
+
   if(isTRUE(write.outfile)){
     writeDir <- out.dir
     if(is.null(writeDir)){
@@ -1464,7 +1470,6 @@ make_interaction_input <- function(gene.list, annotation.map,
 
   # To do ---
   # inherit params from complex, cofactor
-  # Merging with cofactors
 
   if(missing(filter)){
     filter <- "strict"
@@ -1472,14 +1477,6 @@ make_interaction_input <- function(gene.list, annotation.map,
   if(!filter %in% c("strict", "relaxed")){
     stop("'filter' must be one of 'strict' or 'relaxed'.")
   }
-  #if(is.null(annotation.cutoff)){
-  #  annotation.cutoff <- 0.5
-  #}
-  #if(!annotation.cutoff >= 0 & !annotation.cutoff <= 1 ){
-  #  stop("'annotation.cutoff' must be a decimal between 0 and 1.")
-  #} else if(annotation.cutoff == 1){
-  #  warning("An 'annotation.cutoff' of 1 may produce unintended results including an empty output.")
-  #}
   if(missing(priority)){
     priority <- "none"
   }
@@ -1607,7 +1604,6 @@ make_interaction_input <- function(gene.list, annotation.map,
                                           TRUE ~ "FIX")) %>%
         mutate(ligand = ifelse(!(ligand %in% rownames(complex)), final_ligand, ligand)) %>%
         mutate(receptor = ifelse(!(receptor %in% rownames(complex)), final_receptor, receptor)) %>%
-        unique() %>%
         dplyr::filter(!is.na(ligand)) %>%
         dplyr::filter(!is.na(receptor)) %>%
         select(colnames(interaction_input)) %>%
@@ -1628,7 +1624,6 @@ make_interaction_input <- function(gene.list, annotation.map,
         filter(!is.na(ligand) & !is.na(receptor)) %>%
         unique()
 
-      # Complex interactions next - ligand or receptor or both are a complex
       interaction_input_complex <- interaction_input %>%
         dplyr::filter(ligand %in% rownames(complex) | receptor %in% rownames(complex)) %>%
         left_join(annotation.map, by=c("ligand" = "human"), relationship = "many-to-many") %>%
@@ -1651,7 +1646,6 @@ make_interaction_input <- function(gene.list, annotation.map,
                                           TRUE ~ "FIX")) %>%
         mutate(ligand = ifelse(!(ligand %in% rownames(complex)), final_ligand, ligand)) %>%
         mutate(receptor = ifelse(!(receptor %in% rownames(complex)), final_receptor, receptor)) %>%
-        unique() %>%
         dplyr::filter(!is.na(ligand)) %>%
         dplyr::filter(!is.na(receptor)) %>%
         select(colnames(interaction_input)) %>%
@@ -1674,7 +1668,6 @@ make_interaction_input <- function(gene.list, annotation.map,
         filter(!is.na(ligand) & !is.na(receptor)) %>%
         unique()
 
-      # Complex interactions next - ligand or receptor or both are a complex
       interaction_input_complex <- interaction_input %>%
         dplyr::filter(ligand %in% rownames(complex) | receptor %in% rownames(complex)) %>%
         left_join(annotation.map, by=c("ligand" = "human"), relationship = "many-to-many") %>%
@@ -1699,7 +1692,6 @@ make_interaction_input <- function(gene.list, annotation.map,
         mutate(receptor = ifelse(!(receptor %in% rownames(complex)), final_receptor, receptor)) %>%
         separate_longer_delim(ligand,";") %>%
         separate_longer_delim(receptor, ";") %>%
-        unique() %>%
         dplyr::filter(!is.na(ligand)) %>%
         dplyr::filter(!is.na(receptor)) %>%
         select(colnames(interaction_input)) %>%
@@ -1782,15 +1774,19 @@ make_interaction_input <- function(gene.list, annotation.map,
   interaction_input_cofactor_rownameMerge_withCofactors <- interaction_input_cofactor_rownameMerge %>%
     filter(!is.na(agonist) | !is.na(antagonist) | !is.na(co_A_receptor) | !is.na(co_I_receptor))
 
+  cofactor_gene_match <- as.data.frame(rownames(cofactor))
+  colnames(cofactor_gene_match) <- c("row")
+  cofactor_gene_match$interaction <- gsub("\\..$", "", cofactor_gene_match$row)
+
   interaction_input_cofactor_rownameMerge_Full <- interaction_input_cofactor_rownameMerge_withCofactors %>%
     left_join(cofactor_gene_match, by=c("agonist" = "interaction"), relationship = "many-to-many") %>%
-    rename(agonist_match = rowname) %>%
+    rename(agonist_match = row) %>%
     left_join(cofactor_gene_match, by=c("antagonist" = "interaction"), relationship = "many-to-many") %>%
-    rename(antagonist_match = rowname) %>%
+    rename(antagonist_match = row) %>%
     left_join(cofactor_gene_match, by=c("co_A_receptor" = "interaction"), relationship = "many-to-many") %>%
-    rename(co_A_match = rowname) %>%
+    rename(co_A_match = row) %>%
     left_join(cofactor_gene_match, by=c("co_I_receptor" = "interaction"), relationship = "many-to-many") %>%
-    rename(co_I_match = rowname) %>%
+    rename(co_I_match = row) %>%
     mutate(agonist = agonist_match,
            antagonist = antagonist_match,
            co_A_receptor = co_A_match,
@@ -1808,18 +1804,17 @@ make_interaction_input <- function(gene.list, annotation.map,
 
   interaction_output <- interaction_input_cofactors_matched %>%
     column_to_rownames("interaction_name") %>%
+    rename(interaction_name = rowname) %>%
     unique()
 
-  print( paste0("final number of rows: ", nrow(interaction_output)))
-
-  gc()
-
-  write.csv(interaction_output, file = "./for_stats/Interaction.RNAFilter.HumanPriority.Relaxed.NoSynonyms.csv")
-
-  # Finals
-  write.csv(complex_output, "./complex_input_12NOV24_SCTFiltered.csv")
-  write.csv(cofactor_output, "./cofactor_input_12NOV24_SCTFiltered.csv")
-  write.csv(interaction_output, "./interaction_input_12NOV24_SCTFiltered.csv")
+  if(isTRUE(write.outfile)){
+    writeDir <- out.dir
+    if(is.null(writeDir)){
+      writeDir <- "./"
+    }
+    write_delim(interaction_output, file.path(writeDir, "interaction_input_axolotl.tsv"))
+  }
+  return(interaction_output)
 
 }
 
