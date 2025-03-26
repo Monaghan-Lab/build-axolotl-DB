@@ -215,6 +215,9 @@ prep_synonym_map <- function(gene.list, gene.map,
   if(missing(gene.list)){
     stop("You must provide a gene list output by prep_gene_list.")
   }
+  if(missing(gene.map)){
+    stop("You must provide an annotation map output by prep_gene_map.")
+  }
 
   synonyms <- CellChatDB.human$geneInfo %>%
     select(Symbol, Synonym) %>%
@@ -1822,6 +1825,16 @@ make_geneInfo_input <- function(gene.list, annotation.map,
                                 drop.nonhuman = FALSE, check.synonyms = FALSE, synonyms = NULL,
                                 contains.spaces = TRUE,
                                 write.outfile = TRUE, out.dir = NULL){
+
+  if(missing(priority)){
+    priority <- "none"
+  }
+  if(!priority %in% c("human", "other", "none")){
+    stop("'priority' must be one of 'human', 'other', or 'none'.")
+  }
+  if(missing(gene.list)){
+    stop("You must provide a test gene list ")
+  }
 
 }
 
