@@ -1468,9 +1468,6 @@ make_interaction_input <- function(gene.list, annotation.map,
                                    contains.spaces = TRUE,
                                    write.outfile = TRUE, out.dir = NULL){
 
-  # To do ---
-  # inherit params from complex, cofactor
-
   if(missing(filter)){
     filter <- "strict"
   }
@@ -1818,11 +1815,17 @@ make_interaction_input <- function(gene.list, annotation.map,
 
 }
 
+# Gene Info input
+
+make_geneInfo_input <- function(gene.list, annotation.map,
+                                priority = c("human", "other", "none"),
+                                drop.nonhuman = FALSE, check.synonyms = FALSE, synonyms = NULL,
+                                contains.spaces = TRUE,
+                                write.outfile = TRUE, out.dir = NULL){
+
+}
+
 # Not yet started -----
-
-# make_geneInfo_input
-
-make_geneInfo_input <- function(from.CC = CellChatDB.human$geneInfo)
 
 # assemble_database
 
