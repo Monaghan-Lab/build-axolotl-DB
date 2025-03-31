@@ -1876,7 +1876,46 @@ make_geneInfo_input <- function(gene.list, annotation.map,
   if(missing(gene.list)){
     stop("You must provide a test gene list ")
   }
-print()
+
+  # Starting out with cleaning up input before mapping - same as in synonym prep
+  geneInfo_input <- CellChatDB.human$geneInfo %>%
+    mutate(Symbol = toupper(Symbol),
+           Synonym = toupper(Synonym)) %>%
+    separate_longer_delim(Symbol,
+                          "; ") %>%
+    filter(!is.na(EntryID.uniprot))
+  geneInfo_toSub <- geneInfo_input[,2:3] # only want to edit these columns
+  geneInfo_toSub[] <- lapply(geneInfo_toSub, function(x) gsub(";", "", x))
+  geneInfo_toSub[geneInfo_toSub == ""] <- NA # ex. RPL9 - "synonyms" ARE ";"
+  geneInfo_toSub <- geneInfo_toSub %>%
+    mutate(Synonym = case_when(Synonym == "  " ~ NA,
+                               Synonym == "   " ~ NA,
+                               Synonym == " " ~ NA,
+                               TRUE ~ Synonym))
+  geneInfo_noSub <- geneInfo_input[,-c(2:3)] # need to replace these columns with toSub values
+  geneInfo_input <- cbind(geneInfo_toSub, geneInfo_noSub) %>% select(colnames(geneInfo_input))
+
+  duplicates <- geneInfo_input[duplicated(geneInfo_input$EntryID.uniprot),]
+  duplicates.2 <- geneInfo_input[duplicated(geneInfo_input$EntryID.uniprot, fromLast = TRUE),]
+  duplicates <- rbind(duplicates, duplicates.2) %>% unique() %>% arrange(Symbol)
+  duplicates <- duplicates %>%
+    group_by(EntryID.uniprot, Synonym, Reviewed, EntryName, ProteinName, Keywords, Location) %>%
+    summarise(Symbol = paste(Symbol, collapse = " ")) %>%
+    select(colnames(geneInfo_input))
+
+  geneInfo_input_dedup <- geneInfo_input[!geneInfo_input$EntryID.uniprot %in% duplicates$EntryID.uniprot,]
+
+  duplicates <- duplicates %>%
+    mutate(Synonym = case_when(str_detect(Symbol," ") & !is.na(Synonym) ~ paste(Synonym, gsub("^.*? ", "", Symbol)),
+                               is.na(Synonym) ~ "",
+                               TRUE ~ Synonym)) %>%
+    mutate(Synonym = case_when(Synonym == "" ~ paste(Synonym, gsub("^.*? ", "", Symbol)),
+                               TRUE ~ Synonym)) %>%
+    mutate(Synonym = gsub("^ ?","",Synonym)) %>%
+    mutate(Synonym = gsub("\\s+"," ",Synonym)) %>%
+    mutate(Symbol = gsub(" .*$","", Symbol))
+
+  geneInfo_input <- rbind(geneInfo_input, duplicates) %>% unique() %>% arrange(Symbol)
 
 }
 
