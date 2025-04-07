@@ -246,7 +246,7 @@ prep_synonym_map <- function(gene.list, gene.map,
     summarise(Symbol = paste(Symbol, collapse = " ")) %>%
     select(colnames(geneInfo_input))
 
-  geneInfo_input_dedup <- geneInfo_input[!geneInfo_input$EntryID.uniprot %in% duplicates$EntryID.uniprot,]
+ # geneInfo_input_dedup <- geneInfo_input[!geneInfo_input$EntryID.uniprot %in% duplicates$EntryID.uniprot,]
 
   duplicates <- duplicates %>%
     mutate(Synonym = case_when(str_detect(Symbol," ") & !is.na(Synonym) ~ paste(Synonym, gsub("^.*? ", "", Symbol)),
@@ -367,7 +367,7 @@ make_complex_input <- function(gene.list, annotation.map,
                                priority = c("human", "other", "none"), filter = c("strict", "relaxed"),
                                annotation.cutoff = NULL,
                                drop.nonhuman = FALSE, check.synonyms = FALSE, synonyms = NULL,
-                               contains.spaces = TRUE,
+                              # contains.spaces = TRUE,
                                write.outfile = TRUE, out.dir = NULL){
 
   if(missing(filter)){
@@ -601,18 +601,18 @@ make_complex_input <- function(gene.list, annotation.map,
     select(-c(start_na, end_na, na_diff)) %>%
     unique()
 
-  if(isFALSE(contains.spaces)){
-    complex_output_1 <- complex_output_1 %>%
-      mutate(subunit_1 = gsub(" \\[", "\\[", subunit_1),
-             subunit_2 = case_when(is.na(subunit_2) ~ NA,
-                                   TRUE ~ gsub(" \\[", "\\[", subunit_2)),
-             subunit_3 = case_when(is.na(subunit_3) ~ NA,
-                                   TRUE ~ gsub(" \\[", "\\[", subunit_3)),
-             subunit_4 = case_when(is.na(subunit_4) ~ NA,
-                                   TRUE ~ gsub(" \\[", "\\[", subunit_4)),
-             subunit_5 = case_when(is.na(subunit_5) ~ NA,
-                                   TRUE ~ gsub(" \\[", "\\[", subunit_5)))
-  }
+#  if(isFALSE(contains.spaces)){
+#    complex_output_1 <- complex_output_1 %>%
+#      mutate(subunit_1 = gsub(" \\[", "\\[", subunit_1),
+#             subunit_2 = case_when(is.na(subunit_2) ~ NA,
+#                                   TRUE ~ gsub(" \\[", "\\[", subunit_2)),
+#             subunit_3 = case_when(is.na(subunit_3) ~ NA,
+#                                   TRUE ~ gsub(" \\[", "\\[", subunit_3)),
+#             subunit_4 = case_when(is.na(subunit_4) ~ NA,
+#                                   TRUE ~ gsub(" \\[", "\\[", subunit_4)),
+#             subunit_5 = case_when(is.na(subunit_5) ~ NA,
+#                                   TRUE ~ gsub(" \\[", "\\[", subunit_5)))
+#  }
 
   if(missing(gene.list)){
       stop("You must provide a gene list for filtering output by prep_gene_list.")
@@ -684,7 +684,7 @@ make_cofactor_input <- function(gene.list, annotation.map,
                                 priority = c("human", "other", "none"), filter = c("strict", "relaxed"),
                                 annotation.cutoff = NULL,
                                 drop.nonhuman = FALSE, check.synonyms = FALSE, synonyms = NULL,
-                                contains.spaces = TRUE,
+                                #contains.spaces = TRUE,
                                 write.outfile = TRUE, out.dir = NULL){
 
   select=dplyr::select
@@ -1358,40 +1358,40 @@ make_cofactor_input <- function(gene.list, annotation.map,
 
   }
 
-  if(isFALSE(contains.spaces)){
-    cofactor_output_1 <- cofactor_output_1 %>%
-      mutate(cofactor1 = gsub(" \\[", "\\[", cofactor1),
-             cofactor2 = case_when(is.na(cofactor2) ~ NA,
-                                   TRUE ~ gsub(" \\[", "\\[", cofactor2)),
-             cofactor3 = case_when(is.na(cofactor3) ~ NA,
-                                   TRUE ~ gsub(" \\[", "\\[", cofactor3)),
-             cofactor4 = case_when(is.na(cofactor4) ~ NA,
-                                   TRUE ~ gsub(" \\[", "\\[", cofactor4)),
-             cofactor5 = case_when(is.na(cofactor5) ~ NA,
-                                   TRUE ~ gsub(" \\[", "\\[", cofactor5)),
-             cofactor6 = case_when(is.na(cofactor6) ~ NA,
-                                   TRUE ~ gsub(" \\[", "\\[", cofactor6)),
-             cofactor7 = case_when(is.na(cofactor7) ~ NA,
-                                   TRUE ~ gsub(" \\[", "\\[", cofactor7)),
-             cofactor8 = case_when(is.na(cofactor8) ~ NA,
-                                   TRUE ~ gsub(" \\[", "\\[", cofactor8)),
-             cofactor9 = case_when(is.na(cofactor9) ~ NA,
-                                   TRUE ~ gsub(" \\[", "\\[", cofactor9)),
-             cofactor10 = case_when(is.na(cofactor10) ~ NA,
-                                    TRUE ~ gsub(" \\[", "\\[", cofactor10)),
-             cofactor11 = case_when(is.na(cofactor11) ~ NA,
-                                    TRUE ~ gsub(" \\[", "\\[", cofactor11)),
-             cofactor12 = case_when(is.na(cofactor12) ~ NA,
-                                    TRUE ~ gsub(" \\[", "\\[", cofactor12)),
-             cofactor13 = case_when(is.na(cofactor13) ~ NA,
-                                    TRUE ~ gsub(" \\[", "\\[", cofactor13)),
-             cofactor14 = case_when(is.na(cofactor14) ~ NA,
-                                    TRUE ~ gsub(" \\[", "\\[", cofactor14)),
-             cofactor15 = case_when(is.na(cofactor15) ~ NA,
-                                    TRUE ~ gsub(" \\[", "\\[", cofactor15)),
-             cofactor16 = case_when(is.na(cofactor16) ~ NA,
-                                    TRUE ~ gsub(" \\[", "\\[", cofactor16)))
-  }
+# if(isFALSE(contains.spaces)){
+#    cofactor_output_1 <- cofactor_output_1 %>%
+#      mutate(cofactor1 = gsub(" \\[", "\\[", cofactor1),
+#             cofactor2 = case_when(is.na(cofactor2) ~ NA,
+#                                   TRUE ~ gsub(" \\[", "\\[", cofactor2)),
+#             cofactor3 = case_when(is.na(cofactor3) ~ NA,
+#                                   TRUE ~ gsub(" \\[", "\\[", cofactor3)),
+#             cofactor4 = case_when(is.na(cofactor4) ~ NA,
+#                                   TRUE ~ gsub(" \\[", "\\[", cofactor4)),
+#             cofactor5 = case_when(is.na(cofactor5) ~ NA,
+#                                   TRUE ~ gsub(" \\[", "\\[", cofactor5)),
+#             cofactor6 = case_when(is.na(cofactor6) ~ NA,
+#                                   TRUE ~ gsub(" \\[", "\\[", cofactor6)),
+#             cofactor7 = case_when(is.na(cofactor7) ~ NA,
+#                                   TRUE ~ gsub(" \\[", "\\[", cofactor7)),
+#             cofactor8 = case_when(is.na(cofactor8) ~ NA,
+#                                   TRUE ~ gsub(" \\[", "\\[", cofactor8)),
+#             cofactor9 = case_when(is.na(cofactor9) ~ NA,
+#                                   TRUE ~ gsub(" \\[", "\\[", cofactor9)),
+#             cofactor10 = case_when(is.na(cofactor10) ~ NA,
+#                                    TRUE ~ gsub(" \\[", "\\[", cofactor10)),
+#             cofactor11 = case_when(is.na(cofactor11) ~ NA,
+#                                    TRUE ~ gsub(" \\[", "\\[", cofactor11)),
+#             cofactor12 = case_when(is.na(cofactor12) ~ NA,
+#                                    TRUE ~ gsub(" \\[", "\\[", cofactor12)),
+#             cofactor13 = case_when(is.na(cofactor13) ~ NA,
+#                                    TRUE ~ gsub(" \\[", "\\[", cofactor13)),
+#             cofactor14 = case_when(is.na(cofactor14) ~ NA,
+#                                    TRUE ~ gsub(" \\[", "\\[", cofactor14)),
+#             cofactor15 = case_when(is.na(cofactor15) ~ NA,
+#                                    TRUE ~ gsub(" \\[", "\\[", cofactor15)),
+#             cofactor16 = case_when(is.na(cofactor16) ~ NA,
+#                                    TRUE ~ gsub(" \\[", "\\[", cofactor16)))
+#  }
 
   # Now filtering
   if(filter == "strict"){
@@ -1509,7 +1509,7 @@ make_interaction_input <- function(gene.list, annotation.map,
                                    priority = c("human", "other", "none"), filter = c("strict", "relaxed"),
                                    annotation.cutoff = NULL,
                                    drop.nonhuman = FALSE, check.synonyms = FALSE, synonyms = NULL,
-                                   contains.spaces = TRUE,
+                                  # contains.spaces = TRUE,
                                    write.outfile = TRUE, out.dir = NULL){
 
   if(missing(filter)){
@@ -1741,12 +1741,12 @@ make_interaction_input <- function(gene.list, annotation.map,
     }
   }
 
-  if(isFALSE(contains.spaces)){
-    interaction_input_simple <- interaction_input_simple %>%
-      mutate(ligand = gsub(" \\[", "\\[", ligand),
-             receptor = gsub(" \\[", "\\[", receptor)) %>%
-      unique()
-  }
+#  if(isFALSE(contains.spaces)){
+#    interaction_input_simple <- interaction_input_simple %>%
+#      mutate(ligand = gsub(" \\[", "\\[", ligand),
+#             receptor = gsub(" \\[", "\\[", receptor)) %>%
+#      unique()
+#  }
 
   # Initial filter on simple input only
   if(filter == "strict"){
@@ -1781,11 +1781,11 @@ make_interaction_input <- function(gene.list, annotation.map,
     select(colnames(interaction_input_complex)) %>%
     unique()
 
-  if(isFALSE(contains.spaces)){
-    interaction_input_complex_rownameMerge <- interaction_input_complex_rownameMerge %>%
-      mutate(ligand = gsub(" \\[","\\[", ligand),
-             receptor = gsub(" \\[", "\\[", receptor))
-  }
+#  if(isFALSE(contains.spaces)){
+#    interaction_input_complex_rownameMerge <- interaction_input_complex_rownameMerge %>%
+#      mutate(ligand = gsub(" \\[","\\[", ligand),
+#             receptor = gsub(" \\[", "\\[", receptor))
+#  }
 
   interaction_input_bind <- rbind(interaction_input_simple, interaction_input_complex_rownameMerge)
 
@@ -1859,25 +1859,38 @@ make_interaction_input <- function(gene.list, annotation.map,
 
 }
 
-# Gene Info input
+# Gene info input
+# REQUIRED:
+# annotation.map - the output of prep_gene_map
+# synonyms - the output of prep_synonym_map
+# complex - the output of make_complex_input
+# cofactor - the output of make_cofactor_input
+# interactions - the output of make_interaction_input
+#
+# OPTIONAL:
+# write.outfile - write tab-delimited complex output file (default TRUE)
+# out.dir - directory to output written file to (default working directory)
 
-make_geneInfo_input <- function(gene.list, annotation.map,
-                                priority = c("human", "other", "none"),
-                                drop.nonhuman = FALSE, check.synonyms = FALSE, synonyms = NULL,
-                                contains.spaces = TRUE,
+make_geneInfo_input <- function(annotation.map, synonyms,
+                                complex, cofactor, interactions,
                                 write.outfile = TRUE, out.dir = NULL){
 
-  if(missing(priority)){
-    priority <- "none"
+  if(missing(annotation.map)){
+    stop("You must provide the human to axolotl map output by prep_gene_map.")
   }
-  if(!priority %in% c("human", "other", "none")){
-    stop("'priority' must be one of 'human', 'other', or 'none'.")
+  if(missing(synonyms)){
+    stop("You must provide the Symbol to Synonym map output by prep_synonym_map.")
   }
-  if(missing(gene.list)){
-    stop("You must provide a test gene list ")
+  if(missing(complex)){
+    stop("You must provide the output of make_complex_input.")
+  }
+  if(missing(cofactor)){
+    stop("You must provide the output of make_cofactor_input.")
+  }
+  if(missing(interactions)){
+    stop("You must provide the output of make_interaction_input.")
   }
 
-  # Starting out with cleaning up input before mapping - same as in synonym prep
   geneInfo_input <- CellChatDB.human$geneInfo %>%
     mutate(Symbol = toupper(Symbol),
            Synonym = toupper(Synonym)) %>%
@@ -1897,13 +1910,14 @@ make_geneInfo_input <- function(gene.list, annotation.map,
 
   duplicates <- geneInfo_input[duplicated(geneInfo_input$EntryID.uniprot),]
   duplicates.2 <- geneInfo_input[duplicated(geneInfo_input$EntryID.uniprot, fromLast = TRUE),]
-  duplicates <- rbind(duplicates, duplicates.2) %>% unique() %>% arrange(Symbol)
-  duplicates <- duplicates %>%
+  duplicates <- rbind(duplicates, duplicates.2) %>%
+    unique() %>%
+    arrange(Symbol) %>%
     group_by(EntryID.uniprot, Synonym, Reviewed, EntryName, ProteinName, Keywords, Location) %>%
     summarise(Symbol = paste(Symbol, collapse = " ")) %>%
     select(colnames(geneInfo_input))
 
-  geneInfo_input_dedup <- geneInfo_input[!geneInfo_input$EntryID.uniprot %in% duplicates$EntryID.uniprot,]
+  #geneInfo_input_dedup <- geneInfo_input[!geneInfo_input$EntryID.uniprot %in% duplicates$EntryID.uniprot,]
 
   duplicates <- duplicates %>%
     mutate(Synonym = case_when(str_detect(Symbol," ") & !is.na(Synonym) ~ paste(Synonym, gsub("^.*? ", "", Symbol)),
@@ -1916,6 +1930,94 @@ make_geneInfo_input <- function(gene.list, annotation.map,
     mutate(Symbol = gsub(" .*$","", Symbol))
 
   geneInfo_input <- rbind(geneInfo_input, duplicates) %>% unique() %>% arrange(Symbol)
+
+  geneInfo_output <- geneInfo_input %>%
+    left_join(annotation.map, by=c("Symbol" = "human"), relationship = "many-to-many") %>%
+    rename(human_symbol = Symbol) %>%
+    rename(Symbol = full) %>% # Taking human annotations at first pass
+    select(colnames(geneInfo_input), human_symbol) %>%
+    unique() %>%
+    left_join(annotation.map, by=c("human_symbol" = "other"), relationship = "many-to-many") %>%
+    rename(NR_Symbol = full) %>% # NR annotations at second pass
+    unique() %>%
+    filter(!(is.na(Symbol) & is.na(NR_Symbol) & is.na(Synonym))) %>% #Drop if there's no human or NR annotations and no synonyms
+    mutate(Symbol = case_when(is.na(Symbol) & is.na(NR_Symbol) ~ NA,
+                              !is.na(Symbol) & is.na(NR_Symbol) ~ Symbol,
+                              is.na(Symbol) & !is.na(NR_Symbol) ~ NR_Symbol,
+                              !is.na(Symbol) & !is.na(NR_Symbol) ~ paste0(Symbol, ";", NR_Symbol))) %>%
+    select(colnames(geneInfo_input), human_symbol) %>%
+    separate_longer_delim(Symbol, ";") %>%
+    unique()
+
+  geneInfo_ready <- geneInfo_output %>% filter(!is.na(Symbol)) %>% select(colnames(geneInfo_input))
+
+  cofactor.genes <- cofactor %>%
+    pivot_longer(., 1:16) %>%
+    select(value) %>%
+    unique() %>%
+    `colnames<-`(c("gene"))
+  complex.genes <- complex %>%
+    pivot_longer(., 1:5) %>%
+    select(value) %>%
+    unique() %>%
+    `colnames<-`(c("gene"))
+  ligands <- interaction %>%
+    select(ligand) %>%
+    unique() %>%
+    filter(!ligand %in% rownames(complex))%>%
+    `colnames<-`(c("gene"))
+  receptors <- interaction %>%
+    select(receptor) %>%
+    unique() %>%
+    filter(!receptor %in% rownames(complex))%>%
+    `colnames<-`(c("gene"))
+  all.genes <- rbind(cofactor.genes, complex.genes, ligands, receptors) %>%
+    unique() %>%
+    drop_na()
+
+  missing <- all.genes[!all.genes$gene %in% geneInfo_ready$Symbol,]
+
+  missing <- missing %>%
+    left_join(annotation.map, by = c("gene" = "full")) %>%
+    left_join(synonym_map, by = c("human" = "value")) %>%
+    left_join(synonym_map, by = c("other" = "value"))
+
+  missing[missing == ""] <- NA
+
+  missing <- missing %>%
+    mutate(final_synonym = case_when(!is.na(human) & is.na(other) ~ human,
+                                     is.na(human) & !is.na(other) ~ other,
+                                     !is.na(human) & !is.na(other) ~ paste0(human,";",other)),
+           final_symbol = case_when(!is.na(Symbol.x) & is.na(Symbol.y) ~ Symbol.x,
+                                    is.na(Symbol.x) & !is.na(Symbol.y) ~ Symbol.y,
+                                    !is.na(Symbol.x) & !is.na(Symbol.y) ~ paste0(Symbol.x,";",Symbol.y))) %>%
+    separate_longer_delim(final_synonym, ";") %>%
+    separate_longer_delim(final_symbol, ";") %>%
+    select(gene, final_synonym, final_symbol) %>%
+    unique() %>%
+    filter(final_synonym %in% synonym_map$value) %>%
+    left_join(., geneInfo_input, by = c("final_symbol" = "Symbol"), relationship = "many-to-many") %>%
+    filter(!is.na(Synonym)) %>%
+    mutate(Symbol = case_when(str_detect(Synonym, " ", negate = TRUE) ~ gene,
+                              TRUE ~ final_symbol),
+           Synonym = case_when(str_detect(Synonym," ", negate = TRUE) ~ final_symbol,
+                               TRUE ~ Synonym)) %>%
+    mutate(Synonym = case_when(str_detect(Synonym, " ") ~ paste0(str_replace_all(Synonym,final_synonym,""), Symbol),
+                               TRUE ~ Synonym),
+           Symbol = gene) %>%
+    select(colnames(geneInfo_input))
+
+  geneInfo_final <- rbind(geneInfo_ready, missing) %>% unique()
+
+  if(isTRUE(write.outfile)){
+    writeDir <- out.dir
+    if(is.null(writeDir)){
+      writeDir <- "./"
+    }
+    write_delim(geneInfo_final, file.path(writeDir, "geneInfo_input_axolotl.tsv"))
+  }
+  return(geneInfo_final)
+
 
 }
 
