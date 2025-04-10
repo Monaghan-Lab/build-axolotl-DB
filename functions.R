@@ -1,5 +1,5 @@
 #' Source functions for building custom axolotl CellChat DB
-#' TO DO: inherit params for complex, cofactor, interactions; effectively use all the same
+#' TO DO: Clean up annotation mapping - make delimiter more universally applicable (i.e. "|" OR "-" OR "_")
 #' TO DO: how necessary is contains_spaces after creating filter genes and annotation map?
 
 #' prep_gene_list - build gene lists for downstream database filtering
@@ -9,11 +9,10 @@
 #'
 #' OPTIONS:
 #' @param assay - the assay to pull feature names from (default "RNA")
-#' @param contains.spaces - do the gene names in the input gene lists contain spaces? (default TRUE)
 #' @param write.outfile - write gene list to selected directory (default TRUE)
 #' @param out.dir - directory to output written files to (default working directory)
 
-prep_gene_list <- function(objects, assay = NULL, contains.spaces = TRUE,
+prep_gene_list <- function(objects, assay = NULL,
                            write.outfile = TRUE, out.dir = NULL){
   object.list <- objects
   assay <- assay
@@ -30,16 +29,7 @@ prep_gene_list <- function(objects, assay = NULL, contains.spaces = TRUE,
           gene.list <- c(gene.list, genes.add)}
     }
 
-    if(isTRUE(contains.spaces)){
-      gene.list <- as.data.frame(gene.list) %>%
-        `colnames<-`(c("Genes")) %>%
-        mutate(Genes = gsub(" ","",Genes)) %>%
-        unique()
-      gene.list <- as.list(gene.list)[[1]]
-
-    } else{
-      gene.list <- gene.list %>% unique()
-    }
+  gene.list <- gene.list %>% unique()
 
   if(isTRUE(write.outfile)){
     writeDir <- out.dir
@@ -55,27 +45,26 @@ prep_gene_list <- function(objects, assay = NULL, contains.spaces = TRUE,
 # prep_gene_map - prepare annotations for mapping axolotl to human
 #
 # REQUIRED:
-# gxt.map - tab-delimited file mapping genes to transcripts with "|" separating annotations & transcript number
-# e.g.: AMEX60DD000001 ZFP37[nr]|ZNF568[hs]|AMEX60DD301000001.2
+# gxt.map - tab-delimited file mapping genes to transcripts with "|" or "-" separating annotations & transcript number
+# e.g.: AMEX60DD000001 ZFP37 [nr]-ZNF568 [hs]-AMEX60DD301000001.2
 # In the event of NO annotations:
 # AMEX60DD000100  AMEX60DD201000100.1
 #
 # OPTIONS:
+# map.header - does the input gene-transcript map have a header line? (default FALSE)
 # apply.filter - restrict genes in map to only those present in gene.list? (default FALSE)
 #   REQUIRES gene.list to be supplied - the output of prep_gene_list
-# map.header - does the input gene-transcript map have a header line (default FALSE)
-# prioritize.human - when both human and other annotations exist, select human as "official" annotation.
+# contains.spaces - do the genes output by prep_gene_list contain spaces? (default TRUE)
+#   For example, "ZFP37 [nr]|ZNF568 [hs]|AMEX60DD301000001.1" vs. "ZFP37[nr]|ZNF568[hs]|AMEX60DD301000001.1"
+# prioritize.human - when both human and other annotations exist, select human as "official" annotation?
 #   Otherwise, if no human annotation exists, will use the "other" annotation. (default FALSE - keeps both annotations)
 # drop.nonhuman - supercedes 'prioritize.human'; ignore any non-human annotations and drop from output (default FALSE)
-# contains.spaces - do the genes output by prep_gene_list contain spaces? (default TRUE)
 # write.outfile - write tab-delimited annotation file (default TRUE)
 # out.dir - directory to output written files to (default working directory)
 
-prep_gene_map <- function(gxt.map,
-                          apply.filter = FALSE, gene.list = NULL,
-                          map.header = FALSE,
+prep_gene_map <- function(gxt.map, map.header = FALSE,
+                          apply.filter = FALSE, gene.list = NULL, contains.spaces = TRUE,
                           prioritize.human = FALSE, drop.nonhuman = FALSE,
-                          contains.spaces = TRUE,
                           write.outfile = TRUE, out.dir = NULL){
 
   writeDir <- out.dir
@@ -84,25 +73,20 @@ prep_gene_map <- function(gxt.map,
   }
 
   if(is.character(gxt.map)){
-  if(isTRUE(map.header)){
-  gxtMap <- read.delim(gxt.map, header = TRUE) %>%
+  gxtMap <- read.delim(gxt.map, header = map.header) %>%
     `colnames<-`(c("geneID", "transcript"))
   } else{
-    gxtMap <- read.delim(gxt.map, header = FALSE) %>%
-      `colnames<-`(c("geneID", "transcript"))
-  }
-  } else{
-      stop("gxt.map must be a path to a tab-delimited gene-transcript map!")
+      stop("gxt.map must be a path to a tab-delimited gene-transcript map.")
   }
 
   if(nrow(gxtMap) == 0){
-    stop("Check the format of the input annotation file")
+    stop("Check the format of the input annotation file.")
   }
 
   gxtMap <- gxtMap %>%
     mutate(transcript = case_when(isFALSE(contains.spaces) ~ gsub(" ", "", transcript),
                                   TRUE ~ transcript)) %>%
-    filter(str_detect(transcript, "\\|")) %>% # Filtering genes without any annotations
+    filter(str_detect(transcript, "\\|") | str_detect(transcript, "-")) %>% # Filtering genes without any annotations
     mutate(full = transcript)
 
   gxtMap <- gxtMap %>%
@@ -175,7 +159,7 @@ prep_gene_map <- function(gxt.map,
   }
 
   if(isTRUE(write.outfile)){
-    write_delim(gxtMap, file.path(writeDir, "Transcript_annotation_map.txt"))
+    write_delim(gxtMap, file.path(writeDir, "gene_annotation_map.txt"))
   }
 
   return(gxtMap)
