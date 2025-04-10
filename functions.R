@@ -8,7 +8,7 @@
 #' @param objects - list of input Seurat objects as RDS files
 #'
 #' OPTIONS:
-#' @param assay - one of "SCT" or "RNA" (default "RNA")
+#' @param assay - the assay to pull feature names from (default "RNA")
 #' @param contains.spaces - do the gene names in the input gene lists contain spaces? (default TRUE)
 #' @param write.outfile - write gene list to selected directory (default TRUE)
 #' @param out.dir - directory to output written files to (default working directory)
@@ -18,11 +18,6 @@ prep_gene_list <- function(objects, assay = NULL, contains.spaces = TRUE,
   object.list <- objects
   assay <- assay
 
-  writeDir <- out.dir
-  if(is.null(writeDir)){
-    writeDir <- "./"
-  }
-
   gene.list <- c()
   for(object in 1:length(object.list)){
     input <- object.list[[object]]
@@ -31,38 +26,31 @@ prep_gene_list <- function(objects, assay = NULL, contains.spaces = TRUE,
       genes.add <- rownames(input@assays[["RNA"]]@features)
       gene.list <- c(gene.list, genes.add)
     } else if(!is.null(assay)){
-      if(assay == "RNA"){
-        genes.add <- rownames(input@assays[["RNA"]]@features)
-        gene.list <- c(gene.list, genes.add)}
-      else if(assay == "SCT"){
-          genes.add <- input@assays[["SCT"]]@counts@Dimnames[[1]]
+          genes.add <- input@assays[[assay]]@counts@Dimnames[[1]]
           gene.list <- c(gene.list, genes.add)}
-      else if(!assay %in% c("SCT", "RNA")){
-            stop("The input assay must be one of either RNA or SCT")
-    }}
+    }
 
     if(isTRUE(contains.spaces)){
       gene.list <- as.data.frame(gene.list) %>%
         `colnames<-`(c("Genes")) %>%
         mutate(Genes = gsub(" ","",Genes)) %>%
         unique()
-      if(isTRUE(write.outfile)){
-        write_delim(gene.list,
-                    file.path(writeDir, "Genes_for_filter.txt"))
-      }
       gene.list <- as.list(gene.list)[[1]]
 
     } else{
       gene.list <- gene.list %>% unique()
-
-      if(isTRUE(write.outfile)){
-        write_delim(as.data.frame(gene.list) %>% `colnames<-`(c("Genes")),
-                    file.path(writeDir, "Genes_for_filter.txt"))
-      }
     }
-    return(gene.list)
+
+  if(isTRUE(write.outfile)){
+    writeDir <- out.dir
+    if(is.null(writeDir)){
+      writeDir <- "./"
+    }
+    write_delim(as.data.frame(gene.list) %>% `colnames<-`(c("Genes")),
+                file.path(writeDir, "Genes_for_filtering.txt"))
   }
-}
+  return(gene.list)
+  }
 
 # prep_gene_map - prepare annotations for mapping axolotl to human
 #
