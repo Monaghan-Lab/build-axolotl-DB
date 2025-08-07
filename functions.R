@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 #' Source functions for building custom axolotl CellChat DB
 #' TO DO: Clean up annotation mapping - make delimiter more universally applicable (i.e. "|" OR "-" OR "_")
 #' TO DO: how necessary is contains_spaces after creating filter genes and annotation map?
@@ -23,6 +24,8 @@ prep_gene_list <- function(objects, assay = NULL,
 #   - Missingness from OG database (cofactors, complexes, interactions, geneInfo)
 #   - Composition of database when compared to OG (like % secreted, etc)
 
+=======
+>>>>>>> 3b4d4b3 (remove QC testing)
 # prep_gene_list - build gene lists for downstream database filtering
 #
 # REQUIRED:
