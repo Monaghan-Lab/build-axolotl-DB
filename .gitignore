@@ -4,6 +4,6 @@
 !*.md
 *.Rproj
 .Rproj.user
-packrat/*
+packrat/init.R
 .Rhistory
 .RData
