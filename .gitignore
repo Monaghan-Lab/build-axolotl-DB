@@ -2,9 +2,8 @@
 !*.R
 !AmexV6_TxAnnot.tsv
 !*.md
-!.gitignore
 *.Rproj
 .Rproj.user
-packrat/lib*/
+packrat/*
 .Rhistory
 .RData
