@@ -1,5 +1,6 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #' Source functions for building custom axolotl CellChat DB
 #' TO DO: Clean up annotation mapping - make delimiter more universally applicable (i.e. "|" OR "-" OR "_")
 #' TO DO: how necessary is contains_spaces after creating filter genes and annotation map?
@@ -26,6 +27,8 @@ prep_gene_list <- function(objects, assay = NULL,
 
 =======
 >>>>>>> 3b4d4b3 (remove QC testing)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 # prep_gene_list - build gene lists for downstream database filtering
 #
 # REQUIRED:
@@ -45,12 +48,16 @@ prep_gene_list <- function(objects,
   }
 
   object.list <- objects
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
   gene.list <- c()
   for(object in 1:length(object.list)){
     input <- object.list[[object]]
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     if(is.null(assay)){
       genes.add <- rownames(input@assays[["RNA"]]@features)
@@ -62,6 +69,8 @@ prep_gene_list <- function(objects,
 
   gene.list <- gene.list %>% unique()
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     if(missing(assay)){
       DefaultAssay(input) <- "RNA"
       genes.add <- dimnames(input)[1]
@@ -74,7 +83,10 @@ prep_gene_list <- function(objects,
   }
 
   gene.list <- gene.list %>% unlist() %>% unique()
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
   if(isTRUE(write.outfile)){
     writeDir <- out.dir
@@ -86,14 +98,19 @@ prep_gene_list <- function(objects,
   }
   return(gene.list)
 <<<<<<< HEAD
+<<<<<<< HEAD
   }
 =======
 }
 >>>>>>> 58196df (functions)
+=======
+}
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
 # prep_gene_map - prepare annotations for mapping axolotl to human
 #
 # REQUIRED:
+<<<<<<< HEAD
 <<<<<<< HEAD
 # gxt.map - tab-delimited file mapping genes to transcripts with "|" or "-" separating annotations & transcript number
 # e.g.: AMEX60DD000001 ZFP37 [nr]-ZNF568 [hs]-AMEX60DD301000001.2
@@ -195,6 +212,8 @@ prep_gene_map <- function(gxt.map, map.header = FALSE,
 
   } else if(isTRUE(prioritize.human) & isTRUE(drop.nonhuman)){
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 # gxt.map - tab-delimited file mapping transcripts to gene annotations; provided in repository as AmexV6_TxAnnot.tsv
 # gene.list - the output of prep_gene_list
 #
@@ -231,7 +250,10 @@ prep_gene_map <- function(gxt.map,
   }
 
   if(isTRUE(drop.nonhuman)){
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     message("drop.nonhuman supercedes prioritize.human. All nonhuman annotations will be dropped from output.")
     gxtMap <- gxtMap %>%
       filter(!human == "") %>%
@@ -240,7 +262,10 @@ prep_gene_map <- function(gxt.map,
     parseline <- c(full = "", human = "", other = "")
     gxtMap <- rbind(gxtMap, parseline)
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   } else if(isTRUE(prioritize.human) & isFALSE(drop.nonhuman)){
     gxtMap <- gxtMap %>%
       mutate(human = case_when(human == "" & other != "" ~ other,
@@ -249,7 +274,10 @@ prep_gene_map <- function(gxt.map,
 
     parseline <- c(full = "", human = "", other = "")
     gxtMap <- rbind(gxtMap, parseline)
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
   } else{
     parseline <- c(full = "", human = "", other = "")
@@ -259,14 +287,20 @@ prep_gene_map <- function(gxt.map,
 
   if(isTRUE(write.outfile)){
 <<<<<<< HEAD
+<<<<<<< HEAD
     write_delim(gxtMap, file.path(writeDir, "gene_annotation_map.txt"))
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     writeDir <- out.dir
     if(is.null(writeDir)){
       writeDir <- "./"
     }
     write_delim(gxtMap, file.path(writeDir, "geneAnnotations.txt"))
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   }
 
   return(gxtMap)
@@ -276,16 +310,21 @@ prep_gene_map <- function(gxt.map,
 #
 # REQUIRED:
 <<<<<<< HEAD
+<<<<<<< HEAD
 # gene.list - the output of prep_gene_list that will be used to filter annotated genes
 # gene.map - the output of prep_gene_map that will be used to match human genes to axolotl
 =======
 # gene.map - the output of prep_gene_map that will be used to match annotations to axolotl genes
 >>>>>>> 58196df (functions)
+=======
+# gene.map - the output of prep_gene_map that will be used to match annotations to axolotl genes
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 #
 # OPTIONS:
 # write.outfile - write tab-delimited long-form map of Symbol - Synonym (default TRUE)
 # out.dir - directory to output written files to (default working directory)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 prep_synonym_map <- function(gene.list, gene.map,
                              write.outfile = TRUE,
@@ -306,6 +345,8 @@ prep_synonym_map <- function(gene.list, gene.map,
   # Preparing the exact same as in later gene Info prep
   # but makes for more thorough synonym mapping
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 prep_synonym_map <- function(gene.map = NULL,
                              write.outfile = TRUE,
                              out.dir = NULL){
@@ -314,24 +355,34 @@ prep_synonym_map <- function(gene.map = NULL,
     stop("You must provide the annotation map output by prep_gene_map.")
   }
 
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   geneInfo_input <- CellChatDB.human$geneInfo %>%
     mutate(Symbol = toupper(Symbol),
            Synonym = toupper(Synonym)) %>%
     separate_longer_delim(Symbol,
 <<<<<<< HEAD
+<<<<<<< HEAD
                           "; ") %>%
     filter(!is.na(EntryID.uniprot))
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
                           "; ") %>% # ex. Q8IVW1
     separate_longer_delim(Symbol, ";") %>% # ex. M1V481
     filter(!is.na(EntryID.uniprot))
 
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   geneInfo_toSub <- geneInfo_input[,2:3] # only want to edit these columns
   geneInfo_toSub[] <- lapply(geneInfo_toSub, function(x) gsub(";", "", x))
   geneInfo_toSub[geneInfo_toSub == ""] <- NA # ex. RPL9 - "synonyms" ARE ";"
   geneInfo_toSub <- geneInfo_toSub %>%
+<<<<<<< HEAD
 <<<<<<< HEAD
     mutate(Synonym = case_when(Synonym == "  " ~ NA,
                                Synonym == "   " ~ NA,
@@ -356,6 +407,8 @@ prep_synonym_map <- function(gene.map = NULL,
                                TRUE ~ Synonym)) %>%
     mutate(Synonym = case_when(Synonym == "" ~ paste(Synonym, gsub("^.*? ", "", Symbol)),
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     mutate(Synonym = case_when(str_detect(Synonym, "^\\s+$") ~ NA,
                                TRUE ~ Synonym)) %>%
     mutate(Synonym = gsub("\\s+$", "", Synonym))
@@ -374,7 +427,10 @@ prep_synonym_map <- function(gene.map = NULL,
     mutate(Synonym = case_when(str_detect(Symbol," ") & !is.na(Synonym) ~ paste(Synonym, gsub("^.*? ", "", Symbol)),
                                str_detect(Symbol," ") & is.na(Synonym) ~ gsub("^.*? ", "", Symbol),
                                str_detect(Symbol," ",negate = TRUE) & is.na(Synonym) ~ NA,
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
                                TRUE ~ Synonym)) %>%
     mutate(Synonym = gsub("^ ?","",Synonym)) %>%
     mutate(Synonym = gsub("\\s+"," ",Synonym)) %>%
@@ -382,9 +438,13 @@ prep_synonym_map <- function(gene.map = NULL,
 
   geneInfo_input <- rbind(geneInfo_input, duplicates) %>% unique() %>% arrange(Symbol)
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
   rm(duplicates)
 >>>>>>> 58196df (functions)
+=======
+  rm(duplicates)
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
   synonyms <- geneInfo_input %>%
     select(Symbol, Synonym) %>%
@@ -409,10 +469,14 @@ prep_synonym_map <- function(gene.map = NULL,
     unique()
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   # Input is not clean so trying to deal with a few special cases for completeness
 =======
   # Input is not clean, convoluted but trying to deal with a few special cases for completeness
 >>>>>>> 58196df (functions)
+=======
+  # Input is not clean, convoluted but trying to deal with a few special cases for completeness
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   space_synonyms <- CellChatDB.human$geneInfo %>%
     select(Symbol, Synonym) %>%
     separate_longer_delim(., Symbol, "; ") %>% # Some are separated by ;, creating new rows for each
@@ -428,24 +492,34 @@ prep_synonym_map <- function(gene.map = NULL,
 
   synonyms <- rbind(synonyms, space_synonyms_not_symbol)
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
   rm(space_synonyms_not_symbol)
 >>>>>>> 58196df (functions)
+=======
+  rm(space_synonyms_not_symbol)
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
   space_synonyms_symbol <- space_synonyms %>%
     filter(str_count(Synonym, " ") != 0) %>%
     mutate(Symbol = toupper(Symbol), Synonym = toupper(Synonym))
 <<<<<<< HEAD
+<<<<<<< HEAD
 
   bind <- space_synonyms_symbol[c(1:3, 5:8, 10),] %>% `colnames<-`(c("Symbol", "value"))
   synonyms <- rbind(synonyms, bind)
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   rm(space_synonyms)
 
   bind <- space_synonyms_symbol[c(1:3, 5:8, 10),] %>% `colnames<-`(c("Symbol", "value"))
   synonyms <- rbind(synonyms, bind)
   rm(bind)
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
   # Only three remain, easy enough to fix manually
   space_synonyms_symbol <- space_synonyms_symbol[c(4,9,11),] %>%
@@ -458,6 +532,7 @@ prep_synonym_map <- function(gene.map = NULL,
     `colnames<-`(c("Symbol", "value"))
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   synonyms <- rbind(synonyms, space_synonyms_symbol) %>% unique()
   synonyms <- synonyms %>%
     filter(Symbol != value)
@@ -467,6 +542,8 @@ prep_synonym_map <- function(gene.map = NULL,
 
   synonym_map_new <- synonyms %>%
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   synonyms <- rbind(synonyms, space_synonyms_symbol) %>%
     unique() %>%
     filter(Symbol != value)
@@ -475,7 +552,10 @@ prep_synonym_map <- function(gene.map = NULL,
   annotation.map <- gene.map
 
   synonyms <- synonyms %>%
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     left_join(annotation.map, by = c("value" = "human"), relationship = "many-to-many") %>%
     rename(humanAnnot = full) %>%
     left_join(annotation.map, by = c("value" = "other"), relationship = "many-to-many") %>%
@@ -486,6 +566,7 @@ prep_synonym_map <- function(gene.map = NULL,
     rename(otherAnnot2 = full) %>%
     select(-c(human.x, human.y, other.x, other.y)) %>%
 <<<<<<< HEAD
+<<<<<<< HEAD
     filter(humanAnnot %in% filter.genes | otherAnnot %in% filter.genes | humanAnnot2 %in% filter.genes | otherAnnot2 %in% filter.genes) %>%
     filter(!is.na(humanAnnot) | !is.na(otherAnnot)) %>%
     select(Symbol, value) %>%
@@ -494,6 +575,8 @@ prep_synonym_map <- function(gene.map = NULL,
 
   if(isTRUE(write.outfile)){
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     filter(!is.na(humanAnnot) | !is.na(otherAnnot)) %>%
     select(Symbol, value) %>%
     unique()
@@ -503,12 +586,16 @@ prep_synonym_map <- function(gene.map = NULL,
     if(is.null(writeDir)){
       writeDir <- "./"
     }
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     write_delim(synonyms, file.path(writeDir, "Symbol_synonym_map.txt"))
   }
   return(synonyms)
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 # make_complex_input - prepare complex input of CellChat DB
 # REQUIRED:
@@ -518,10 +605,16 @@ prep_synonym_map <- function(gene.map = NULL,
 # make_complex_input - prepare complex input of database
 # REQUIRED:
 >>>>>>> 58196df (functions)
+=======
+
+# make_complex_input - prepare complex input of database
+# REQUIRED:
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 # annotation.map - the output of prep_gene_map that will be used to match human genes to axolotl
 #
 # OPTIONS:
 # priority - in the event that there are both human and other annotations for a gene, give priority to either or none. (default "none")
+<<<<<<< HEAD
 <<<<<<< HEAD
   # Note: the same priority will be applied if testing for synonyms.
 # filter - how to apply filtering genes using gene.list. "Strict" (the default) requires that all annotated subunits appear in gene.list. "Relaxed" requires at least one.
@@ -548,6 +641,8 @@ make_complex_input <- function(gene.list, annotation.map,
   if(!filter %in% c("strict", "relaxed")){
     stop("'filter' must be one of 'strict' or 'relaxed'.")
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 # annotation.cutoff - if fewer than this fraction of subunits are matched to axolotl, drop from input.
 #   - The default 0.5 means that rows will be dropped where < 50% of input subunits are matched to axolotl.
 # check.synonyms - attempt to rescue rows by also testing for synonymous genes? (default FALSE)
@@ -563,7 +658,10 @@ make_complex_input <- function(annotation.map = NULL,
 
   if(is.null(annotation.map)){
     stop("You must provide the annotation map output by prep_gene_map.")
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   }
   if(is.null(annotation.cutoff)){
     annotation.cutoff <- 0.5
@@ -571,10 +669,13 @@ make_complex_input <- function(annotation.map = NULL,
   if(!annotation.cutoff >= 0 & !annotation.cutoff <= 1 ){
     stop("'annotation.cutoff' must be a decimal between 0 and 1.")
 <<<<<<< HEAD
+<<<<<<< HEAD
   } else if(annotation.cutoff == 1){
     warning("An 'annotation.cutoff' of 1 may produce unintended results including an empty output.")
 =======
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   }
   if(missing(priority)){
     priority <- "none"
@@ -588,10 +689,14 @@ make_complex_input <- function(annotation.map = NULL,
   complex_input <- complex_input %>%
     rownames_to_column("rowname") %>%
 <<<<<<< HEAD
+<<<<<<< HEAD
     mutate(rowname = case_when(rowname %in% c("RA-ALDH1A1", "RA-ALDH1A2", "RA-ALDH1A3") ~ gsub("RA-","", rowname),
 =======
     mutate(rowname = case_when(rowname %in% c("RA-ALDH1A1", "RA-ALDH1A2", "RA-ALDH1A3") ~ gsub("RA-","", rowname), # This is the only special case where this is needed
 >>>>>>> 58196df (functions)
+=======
+    mutate(rowname = case_when(rowname %in% c("RA-ALDH1A1", "RA-ALDH1A2", "RA-ALDH1A3") ~ gsub("RA-","", rowname), # This is the only special case where this is needed
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
                                TRUE ~ rowname),
            subunit_2 = case_when(subunit_2 == "ALDH1A1" ~ NA,
                                  TRUE ~ subunit_2))
@@ -613,6 +718,7 @@ make_complex_input <- function(annotation.map = NULL,
       rename(subunit_5a = value) %>%
       mutate(subunit_1b = case_when(!is.na(subunit_1) & is.na(subunit_1a) ~ subunit_1,
                                     !is.na(subunit_1) & !is.na(subunit_1a) ~ paste0(subunit_1,";",subunit_1a),
+<<<<<<< HEAD
 <<<<<<< HEAD
                                     is.na(subunit_1) & is.na(subunit_1a) ~ NA,
                                     TRUE ~ "FIX"),
@@ -639,6 +745,8 @@ make_complex_input <- function(annotation.map = NULL,
       separate_longer_delim(subunit_4b, ";") %>%
       separate_longer_delim(subunit_5b, ";") %>%
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
                                     is.na(subunit_1) & is.na(subunit_1a) ~ NA),
              subunit_2b = case_when(!is.na(subunit_2) & is.na(subunit_2a) ~ subunit_2,
                                     !is.na(subunit_2) & !is.na(subunit_2a) ~ paste0(subunit_2,";",subunit_2a),
@@ -658,21 +766,29 @@ make_complex_input <- function(annotation.map = NULL,
       separate_longer_delim(subunit_3b,";") %>%
       separate_longer_delim(subunit_4b,";") %>%
       separate_longer_delim(subunit_5b,";") %>%
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
       unique()
     colnames(complex_input_synonyms) <- colnames(complex_input)
     complex_count = rowSums(!(is.na(complex_input_synonyms[,-1])))
     complex_input_synonyms$start_na <- complex_count # For later to determine what valid "missingness" is to keep after mapping
     complex_input <- complex_input_synonyms
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     rm(complex_input_synonyms)
 >>>>>>> 58196df (functions)
+=======
+    rm(complex_input_synonyms)
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   } else{
     complex_count = rowSums(!(is.na(complex_input[,-1])))
     complex_input$start_na <- complex_count # For later to determine what valid "missingness" is to keep after mapping
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   if(isTRUE(drop.nonhuman)){
     message("drop.nonhuman supercedes annotation priority. Only human annotations will be searched for.")
@@ -699,6 +815,9 @@ make_complex_input <- function(annotation.map = NULL,
 =======
   complex_output_1 <- complex_input %>% # Mapping subunits to axolotl genes
 >>>>>>> 58196df (functions)
+=======
+  complex_output_1 <- complex_input %>% # Mapping subunits to axolotl genes
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     left_join(annotation.map, by=c("subunit_1" = "human"), relationship = "many-to-many") %>%
     rename(subunit_1a = full) %>%
     left_join(annotation.map, by=c("subunit_2" = "human"),relationship = "many-to-many") %>%
@@ -718,6 +837,7 @@ make_complex_input <- function(annotation.map = NULL,
     left_join(annotation.map, by=c("subunit_4" = "other"),relationship = "many-to-many") %>%
     rename(subunit_4b = full) %>%
     left_join(annotation.map, by=c("subunit_5" = "other"),relationship = "many-to-many") %>%
+<<<<<<< HEAD
 <<<<<<< HEAD
     rename(subunit_5b = full)
 
@@ -819,6 +939,8 @@ make_complex_input <- function(annotation.map = NULL,
 
   }
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     rename(subunit_5b = full) %>%
     mutate(final_1 = case_when(!is.na(subunit_1a) & is.na(subunit_1b) ~ subunit_1a,
                                !is.na(subunit_1a) & !is.na(subunit_1b) & priority == "human" ~ subunit_1a,
@@ -862,7 +984,10 @@ make_complex_input <- function(annotation.map = NULL,
     separate_longer_delim(final_5, ";") %>%
     unique() %>%
     `colnames<-`(c("rowname", "start_na", colnames(CellChatDB.human$complex)))
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
   out_na = rowSums(!(is.na(complex_output_1[,-c(1,2)])))
   complex_output_1$end_na <- out_na
@@ -873,6 +998,7 @@ make_complex_input <- function(annotation.map = NULL,
     select(-c(start_na, end_na, na_diff)) %>%
     unique()
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 #  if(isFALSE(contains.spaces)){
 #    complex_output_1 <- complex_output_1 %>%
@@ -920,6 +1046,8 @@ make_complex_input <- function(annotation.map = NULL,
 
   complex_output <- fix_rownames %>%
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   # left-justifying column values
   complex_output_1 <- do.call(rbind,
                               lapply(1:nrow(complex_output_1),
@@ -932,7 +1060,10 @@ make_complex_input <- function(annotation.map = NULL,
   complex_output_1$rowname <- make.unique(complex_output_1$rowname)
 
   complex_output_1 <- complex_output_1 %>%
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     column_to_rownames("new_rowname") %>%
     select(-rowname)
 
@@ -942,29 +1073,39 @@ make_complex_input <- function(annotation.map = NULL,
       writeDir <- "./"
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
     write_delim(complex_output, file.path(writeDir, "complex_input_axolotl.tsv"))
   }
 
  return(complex_output)
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     write_delim(complex_output_1, file.path(writeDir, "complex_input_axolotl.tsv"))
   }
 
   return(complex_output_1)
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
 }
 
 # make_cofactor_input
 # REQUIRED:
 <<<<<<< HEAD
+<<<<<<< HEAD
 # gene.list - the output of prep_gene_list that will be used to filter annotated genes
 =======
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 # annotation.map - the output of prep_gene_map that will be used to match human genes to axolotl
 #
 # OPTIONS:
 # priority - in the event that there are both human and other annotations for a gene, give priority to either or none. (default "none")
+<<<<<<< HEAD
 <<<<<<< HEAD
 # Note: the same priority will be applied if testing for synonyms.
 # filter - how to apply filtering genes using gene.list. "Strict" (the default) requires that all annotated cofactors appear in gene.list. "Relaxed" requires at least one.
@@ -992,6 +1133,8 @@ make_cofactor_input <- function(gene.list, annotation.map,
   if(!filter %in% c("strict", "relaxed")){
     stop("'filter' must be one of 'strict' or 'relaxed'.")
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 # annotation.cutoff - if fewer than this fraction of cofactors are matched to axolotl, drop from input. (default 0.5)
 # check.synonyms - attempt to rescue rows by also testing for synonymous genes? (default FALSE)
 #   - Requires synonyms if TRUE; the output of prep_synonym_map
@@ -1008,7 +1151,10 @@ make_cofactor_input <- function(annotation.map = NULL,
 
   if(is.null(annotation.map)){
     stop("You must provide the annotation map output by prep_gene_map.")
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   }
   if(is.null(annotation.cutoff)){
     annotation.cutoff <- 0.5
@@ -1031,6 +1177,7 @@ make_cofactor_input <- function(annotation.map = NULL,
     rownames_to_column("rowname")
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   if(missing(gene.list)){
     stop("You must provide a gene list for filtering output by prep_gene_list.")
   }
@@ -1038,6 +1185,8 @@ make_cofactor_input <- function(annotation.map = NULL,
 
 =======
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   if(isTRUE(check.synonyms)){
     if(is.null(synonyms)){
       stop("You must provide a Symbol-Synonym map output by prep_synonym_map to search for synonymous genes.")
@@ -1077,6 +1226,7 @@ make_cofactor_input <- function(annotation.map = NULL,
       rename(cofactor16a = value) %>%
       mutate(cofactor1b = case_when(is.na(cofactor1) ~ NA,
                                     !is.na(cofactor1) & is.na(cofactor1a) ~ cofactor1,
+<<<<<<< HEAD
 <<<<<<< HEAD
                                     !is.na(cofactor1) & !is.na(cofactor1a) ~ paste0(cofactor1,";",cofactor1a),
                                     TRUE ~ "FIX"),
@@ -1141,6 +1291,8 @@ make_cofactor_input <- function(annotation.map = NULL,
                                      !is.na(cofactor16) & !is.na(cofactor16a) ~ paste0(cofactor16,";",cofactor16a),
                                      TRUE ~ "FIX")) %>%
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
                                     !is.na(cofactor1) & !is.na(cofactor1a) ~ paste0(cofactor1,";",cofactor1a)),
              cofactor2b = case_when(is.na(cofactor2) ~ NA,
                                     !is.na(cofactor2) & is.na(cofactor2a) ~ cofactor2,
@@ -1187,7 +1339,10 @@ make_cofactor_input <- function(annotation.map = NULL,
              cofactor16b = case_when(is.na(cofactor16) ~ NA,
                                      !is.na(cofactor16) & is.na(cofactor16a) ~ cofactor16,
                                      !is.na(cofactor16) & !is.na(cofactor16a) ~ paste0(cofactor16,";",cofactor16a))) %>%
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
       select("rowname", ends_with("b")) %>%
       separate_longer_delim(cofactor1b, ";") %>%
       separate_longer_delim(cofactor2b, ";") %>%
@@ -1217,6 +1372,7 @@ make_cofactor_input <- function(annotation.map = NULL,
     cofactor_input$start_na <- cofactor_count
   }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   cofactor_input_wnts <- cofactor_input %>%
     filter(rowname == "WNT antagonist") %>%
@@ -1829,6 +1985,8 @@ make_cofactor_input <- function(annotation.map = NULL,
   cofactor_output_2$end_na <- out_na
   cofactor_output_2 <- cofactor_output_2 %>%
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   # Need to take care of WNTs specially because there are so many combinations
   cofactor_input_wnts <- cofactor_input %>%
     filter(rowname == "WNT antagonist") %>%
@@ -2075,13 +2233,17 @@ make_cofactor_input <- function(annotation.map = NULL,
   out_na = rowSums(!(is.na(cofactor_output_1[,-c(1,2)])))
   cofactor_output_1$end_na <- out_na
   cofactor_output_1 <- cofactor_output_1 %>%
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     select(rowname, start_na, end_na, starts_with("cofactor")) %>%
     mutate(na_diff = end_na/start_na) %>%
     filter(na_diff >= annotation.cutoff) %>% # Drop if greater than X fraction of subunits are not annotated
     select(-c(start_na, end_na, na_diff)) %>%
     unique()
 
+<<<<<<< HEAD
 <<<<<<< HEAD
   rownames(cofactor_output_2) <- NULL
   cofactor_output_2$interaction <- make.unique(cofactor_output_2$rowname, sep = ".")
@@ -2091,6 +2253,11 @@ make_cofactor_input <- function(annotation.map = NULL,
   cofactor_output_1$interaction <- make.unique(cofactor_output_1$rowname, sep = ".")
   cofactor_output_1 <- cofactor_output_1 %>%
 >>>>>>> 58196df (functions)
+=======
+  rownames(cofactor_output_1) <- NULL
+  cofactor_output_1$interaction <- make.unique(cofactor_output_1$rowname, sep = ".")
+  cofactor_output_1 <- cofactor_output_1 %>%
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     column_to_rownames("interaction") %>%
     select(-rowname)
 
@@ -2099,6 +2266,7 @@ make_cofactor_input <- function(annotation.map = NULL,
     if(is.null(writeDir)){
       writeDir <- "./"
     }
+<<<<<<< HEAD
 <<<<<<< HEAD
     write_delim(cofactor_output_2, file.path(writeDir, "cofactor_input_axolotl.tsv"))
   }
@@ -2111,6 +2279,8 @@ make_cofactor_input <- function(annotation.map = NULL,
 # REQUIRED:
 # gene.list - the output of prep_gene_list that will be used to filter annotated genes
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     write_delim(cofactor_output_1, file.path(writeDir, "cofactor_input_axolotl.tsv"))
   }
   return(cofactor_output_1)
@@ -2119,13 +2289,17 @@ make_cofactor_input <- function(annotation.map = NULL,
 
 # make_interaction_input
 # REQUIRED:
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 # annotation.map - the output of prep_gene_map that will be used to match human genes to axolotl
 # complex - the output of make_complex_input
 # cofactor - the output of make_cofactor_input
 #
 # OPTIONS:
 # priority - in the event that there are both human and other annotations for a gene, give priority to either or none. (default "none")
+<<<<<<< HEAD
 <<<<<<< HEAD
 # Note: the same priority will be applied if testing for synonyms.
 # filter - how to apply filtering genes using gene.list. "Strict" (the default) requires that all annotated cofactors appear in gene.list. "Relaxed" requires at least one.
@@ -2153,6 +2327,8 @@ make_interaction_input <- function(gene.list, annotation.map,
   if(!filter %in% c("strict", "relaxed")){
     stop("'filter' must be one of 'strict' or 'relaxed'.")
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 # annotation.cutoff - if fewer than this fraction of cofactors are matched to axolotl, drop from input. (default 0.5)
 # check.synonyms - attempt to rescue rows by also testing for synonymous genes? (default FALSE)
 #   - Requires synonyms if TRUE; the output of prep_synonym_map
@@ -2168,7 +2344,10 @@ make_interaction_input <- function(annotation.map = NULL,
 
   if(is.null(annotation.map) | is.null(complex) | is.null(cofactor)){
     stop("Please provide all required inputs.")
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   }
   if(missing(priority)){
     priority <- "none"
@@ -2189,10 +2368,13 @@ make_interaction_input <- function(annotation.map = NULL,
     rownames_to_column("rowname")
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   filter.genes <- gene.list
 
 =======
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   if(isTRUE(check.synonyms)){
     if(is.null(synonyms)){
       stop("You must provide the Symbol-Synonym map output by prep_synonym_map in order to check for synonyms.")
@@ -2202,30 +2384,41 @@ make_interaction_input <- function(annotation.map = NULL,
       left_join(synonyms, by=c("ligand" = "Symbol"), relationship = "many-to-many") %>%
       rename(ligand1a = value) %>%
 <<<<<<< HEAD
+<<<<<<< HEAD
       left_join(synonyms, by=c("receptor" = "Symbol"),relationship = "many-to-many") %>%
 =======
       left_join(synonyms, by=c("receptor" = "Symbol"), relationship = "many-to-many") %>%
 >>>>>>> 58196df (functions)
+=======
+      left_join(synonyms, by=c("receptor" = "Symbol"), relationship = "many-to-many") %>%
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
       rename(receptor1a = value) %>%
       mutate(ligand1b = case_when(!is.na(ligand1a) ~ paste0(ligand, ";", ligand1a),
                                   TRUE ~ ligand),
              receptor1b = case_when(!is.na(receptor1a) ~ paste0(receptor,";",receptor1a),
                                     TRUE ~ receptor)) %>%
 <<<<<<< HEAD
+<<<<<<< HEAD
       mutate(ligand = ligand1b, receptor = receptor1b) %>%
       select(colnames(interaction_input)) %>%
       separate_longer_delim(ligand,";") %>%
       separate_longer_delim(receptor,";") %>%
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
       separate_longer_delim(ligand1b, ";") %>%
       separate_longer_delim(receptor1b, ";") %>%
       mutate(ligand = ligand1b, receptor = receptor1b) %>%
       select(colnames(interaction_input)) %>%
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
       unique()
 
     interaction_input <- interaction_input_synonyms
     rm(interaction_input_synonyms)
+<<<<<<< HEAD
 <<<<<<< HEAD
   }
 
@@ -2429,6 +2622,8 @@ make_interaction_input <- function(annotation.map = NULL,
     mutate(rowname = gsub("\\..$", "",rowname))
   rowname_match$new_rowname <- make.unique(rowname_match$rowname, sep = ".")
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
   }
 
@@ -2495,7 +2690,10 @@ make_interaction_input <- function(annotation.map = NULL,
     rownames_to_column("rowname") %>%
     mutate(rowname = gsub("\\..$", "", rowname)) # "rowname" is now actually interaction name
   rowname_match$new_rowname <- make.unique(rowname_match$rowname, sep = ".") # "new_rowname" is interaction name made unique
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   complex_gene_match <- rowname_match %>% select(rowname, new_rowname)
 
   # Now mapping ligands and receptors to rownames of complex input
@@ -2505,6 +2703,7 @@ make_interaction_input <- function(annotation.map = NULL,
     left_join(complex_gene_match, by=c("receptor" = "rowname"), relationship = "many-to-many") %>%
     rename(receptor_match = new_rowname) %>%
     mutate(final_ligand = case_when((!ligand %in% complex_gene_match$rowname) & is.na(ligand_match) ~ ligand,
+<<<<<<< HEAD
 <<<<<<< HEAD
                                     (ligand %in% complex_gene_match$rowname) & !is.na(ligand_match) ~ ligand_match,
                                     TRUE ~ "FIX"),
@@ -2533,6 +2732,8 @@ make_interaction_input <- function(annotation.map = NULL,
              (ligand %in% rownames(complex) & receptor %in% rownames(complex)))
 
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
                                     (ligand %in% complex_gene_match$rowname) & !is.na(ligand_match) ~ ligand_match),
            final_receptor = case_when((!receptor %in% complex_gene_match$rowname) & is.na(receptor_match) ~ receptor,
                                       (receptor %in% complex_gene_match$rowname) & !is.na(receptor_match) ~ receptor_match)) %>%
@@ -2543,7 +2744,10 @@ make_interaction_input <- function(annotation.map = NULL,
 
   interaction_input_bind <- rbind(interaction_input_simple, interaction_input_complex_rownameMerge)
 
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   # Map interaction input ant/agonists, co-receptors to cofactor input
   interaction_input_cofactor_rownameMerge <- interaction_input_bind %>%
     mutate(agonist = case_when(agonist == "" ~ NA,
@@ -2558,18 +2762,24 @@ make_interaction_input <- function(annotation.map = NULL,
   # Nothing to map in these - will just tack on after
   interaction_input_cofactor_rownameMerge_noCofactors <- interaction_input_cofactor_rownameMerge %>%
 <<<<<<< HEAD
+<<<<<<< HEAD
     filter(is.na(agonist) & is.na(antagonist) & is.na(co_A_receptor) & is.na(co_I_receptor))
 
   # Need to map to cofactor input
   interaction_input_cofactor_rownameMerge_withCofactors <- interaction_input_cofactor_rownameMerge %>%
     filter(!is.na(agonist) | !is.na(antagonist) | !is.na(co_A_receptor) | !is.na(co_I_receptor))
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     filter(if_all(c(agonist, antagonist, co_A_receptor, co_I_receptor), is.na))
 
   # Need to map to cofactor input
   interaction_input_cofactor_rownameMerge_withCofactors <- interaction_input_cofactor_rownameMerge %>%
     filter(!if_all(c(agonist, antagonist, co_A_receptor, co_I_receptor), is.na))
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
   cofactor_gene_match <- as.data.frame(rownames(cofactor))
   colnames(cofactor_gene_match) <- c("row")
@@ -2613,9 +2823,12 @@ make_interaction_input <- function(annotation.map = NULL,
   }
   return(interaction_output)
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 }
 
 # Gene info input
@@ -2630,6 +2843,7 @@ make_interaction_input <- function(annotation.map = NULL,
 # write.outfile - write tab-delimited complex output file (default TRUE)
 # out.dir - directory to output written file to (default working directory)
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 make_geneInfo_input <- function(annotation.map, synonyms,
                                 complex, cofactor, interactions,
@@ -2649,6 +2863,8 @@ make_geneInfo_input <- function(annotation.map, synonyms,
   }
   if(missing(interactions)){
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
                                 complex = NULL, cofactor = NULL, interactions = NULL,
                                 write.outfile = TRUE, out.dir = NULL){
@@ -2665,7 +2881,10 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
     stop("You must provide the output of make_cofactor_input.")
   }
   if(is.null(interactions)){
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     stop("You must provide the output of make_interaction_input.")
   }
 
@@ -2674,18 +2893,25 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
            Synonym = toupper(Synonym)) %>%
     separate_longer_delim(Symbol,
 <<<<<<< HEAD
+<<<<<<< HEAD
                           "; ") %>%
     filter(!is.na(EntryID.uniprot))
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
                           "; ") %>% # ex. Q8IVW1
     separate_longer_delim(Symbol, ";") %>% # ex. M1V481
     filter(!is.na(EntryID.uniprot))
 
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   geneInfo_toSub <- geneInfo_input[,2:3] # only want to edit these columns
   geneInfo_toSub[] <- lapply(geneInfo_toSub, function(x) gsub(";", "", x))
   geneInfo_toSub[geneInfo_toSub == ""] <- NA # ex. RPL9 - "synonyms" ARE ";"
   geneInfo_toSub <- geneInfo_toSub %>%
+<<<<<<< HEAD
 <<<<<<< HEAD
     mutate(Synonym = case_when(Synonym == "  " ~ NA,
                                Synonym == "   " ~ NA,
@@ -2698,6 +2924,8 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
   duplicates.2 <- geneInfo_input[duplicated(geneInfo_input$EntryID.uniprot, fromLast = TRUE),]
   duplicates <- rbind(duplicates, duplicates.2) %>%
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     mutate(Synonym = case_when(str_detect(Synonym, "^\\s+$") ~ NA,
                                TRUE ~ Synonym)) %>%
     mutate(Synonym = gsub("\\s+$", "", Synonym))
@@ -2708,11 +2936,15 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
   # Collapsing duplicated UNIPROT IDs into one gene with XT symbols as synonyms
   duplicates <- rbind(geneInfo_input[duplicated(geneInfo_input$EntryID.uniprot),],
                       geneInfo_input[duplicated(geneInfo_input$EntryID.uniprot, fromLast = TRUE),]) %>%
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     unique() %>%
     arrange(Symbol) %>%
     group_by(EntryID.uniprot, Synonym, Reviewed, EntryName, ProteinName, Keywords, Location) %>%
     summarise(Symbol = paste(Symbol, collapse = " ")) %>%
+<<<<<<< HEAD
 <<<<<<< HEAD
     select(colnames(geneInfo_input))
 
@@ -2724,11 +2956,16 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
                                TRUE ~ Synonym)) %>%
     mutate(Synonym = case_when(Synonym == "" ~ paste(Synonym, gsub("^.*? ", "", Symbol)),
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     select(colnames(geneInfo_input)) %>%
     mutate(Synonym = case_when(str_detect(Symbol," ") & !is.na(Synonym) ~ paste(Synonym, gsub("^.*? ", "", Symbol)),
                                str_detect(Symbol," ") & is.na(Synonym) ~ gsub("^.*? ", "", Symbol),
                                str_detect(Symbol," ",negate = TRUE) & is.na(Synonym) ~ NA,
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
                                TRUE ~ Synonym)) %>%
     mutate(Synonym = gsub("^ ?","",Synonym)) %>%
     mutate(Synonym = gsub("\\s+"," ",Synonym)) %>%
@@ -2736,9 +2973,13 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
 
   geneInfo_input <- rbind(geneInfo_input, duplicates) %>% unique() %>% arrange(Symbol)
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
   rm(duplicates)
 >>>>>>> 58196df (functions)
+=======
+  rm(duplicates)
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
   geneInfo_output <- geneInfo_input %>%
     left_join(annotation.map, by=c("Symbol" = "human"), relationship = "many-to-many") %>%
@@ -2750,16 +2991,21 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
     rename(NR_Symbol = full) %>% # NR annotations at second pass
     unique() %>%
 <<<<<<< HEAD
+<<<<<<< HEAD
     filter(!(is.na(Symbol) & is.na(NR_Symbol) & is.na(Synonym))) %>% #Drop if there's no human or NR annotations and no synonyms
 =======
     filter(!if_all(c(Symbol, NR_Symbol, Synonym), is.na)) %>% # Drop if there's no human or NR annotations and no synonyms
 >>>>>>> 58196df (functions)
+=======
+    filter(!if_all(c(Symbol, NR_Symbol, Synonym), is.na)) %>% # Drop if there's no human or NR annotations and no synonyms
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     mutate(Symbol = case_when(is.na(Symbol) & is.na(NR_Symbol) ~ NA,
                               !is.na(Symbol) & is.na(NR_Symbol) ~ Symbol,
                               is.na(Symbol) & !is.na(NR_Symbol) ~ NR_Symbol,
                               !is.na(Symbol) & !is.na(NR_Symbol) ~ paste0(Symbol, ";", NR_Symbol))) %>%
     select(colnames(geneInfo_input), human_symbol) %>%
     separate_longer_delim(Symbol, ";") %>%
+<<<<<<< HEAD
 <<<<<<< HEAD
     unique()
 
@@ -2769,6 +3015,11 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
     filter(!is.na(Symbol)) %>%
     select(colnames(geneInfo_input))
 >>>>>>> 58196df (functions)
+=======
+    unique() %>%
+    filter(!is.na(Symbol)) %>%
+    select(colnames(geneInfo_input))
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
   cofactor.genes <- cofactor %>%
     pivot_longer(., 1:16) %>%
@@ -2781,19 +3032,27 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
     unique() %>%
     `colnames<-`(c("gene"))
 <<<<<<< HEAD
+<<<<<<< HEAD
   ligands <- interaction %>%
 =======
   ligands <- interactions %>%
 >>>>>>> 58196df (functions)
+=======
+  ligands <- interactions %>%
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     select(ligand) %>%
     unique() %>%
     filter(!ligand %in% rownames(complex))%>%
     `colnames<-`(c("gene"))
 <<<<<<< HEAD
+<<<<<<< HEAD
   receptors <- interaction %>%
 =======
   receptors <- interactions %>%
 >>>>>>> 58196df (functions)
+=======
+  receptors <- interactions %>%
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     select(receptor) %>%
     unique() %>%
     filter(!receptor %in% rownames(complex))%>%
@@ -2803,6 +3062,7 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
     drop_na()
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   missing <- all.genes[!all.genes$gene %in% geneInfo_ready$Symbol,]
 
   missing <- missing %>%
@@ -2810,11 +3070,16 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
     left_join(synonym_map, by = c("human" = "value")) %>%
     left_join(synonym_map, by = c("other" = "value"))
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
   missing <- all.genes[!all.genes$gene %in% geneInfo_output$Symbol,] %>%
     left_join(annotation.map, by = c("gene" = "full")) %>%
     left_join(synonyms, by = c("human" = "value")) %>%
     left_join(synonyms, by = c("other" = "value"))
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
   missing[missing == ""] <- NA
 
@@ -2830,10 +3095,14 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
     select(gene, final_synonym, final_symbol) %>%
     unique() %>%
 <<<<<<< HEAD
+<<<<<<< HEAD
     filter(final_synonym %in% synonym_map$value) %>%
 =======
     filter(final_synonym %in% synonyms$value) %>%
 >>>>>>> 58196df (functions)
+=======
+    filter(final_synonym %in% synonyms$value) %>%
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
     left_join(., geneInfo_input, by = c("final_symbol" = "Symbol"), relationship = "many-to-many") %>%
     filter(!is.na(Synonym)) %>%
     mutate(Symbol = case_when(str_detect(Synonym, " ", negate = TRUE) ~ gene,
@@ -2841,25 +3110,34 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
            Synonym = case_when(str_detect(Synonym," ", negate = TRUE) ~ final_symbol,
                                TRUE ~ Synonym)) %>%
 <<<<<<< HEAD
+<<<<<<< HEAD
     mutate(Synonym = case_when(str_detect(Synonym, " ") ~ paste0(str_replace_all(Synonym,final_synonym,""), Symbol),
 =======
     mutate(Synonym = case_when(str_detect(Synonym, " ") ~ paste0(str_replace_all(Synonym, final_synonym, ""), Symbol),
 >>>>>>> 58196df (functions)
+=======
+    mutate(Synonym = case_when(str_detect(Synonym, " ") ~ paste0(str_replace_all(Synonym, final_synonym, ""), Symbol),
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
                                TRUE ~ Synonym),
            Symbol = gene) %>%
     select(colnames(geneInfo_input))
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   geneInfo_final <- rbind(geneInfo_ready, missing) %>% unique()
 =======
   geneInfo_output <- rbind(geneInfo_output, missing) %>% unique()
 >>>>>>> 58196df (functions)
+=======
+  geneInfo_output <- rbind(geneInfo_output, missing) %>% unique()
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
   if(isTRUE(write.outfile)){
     writeDir <- out.dir
     if(is.null(writeDir)){
       writeDir <- "./"
     }
+<<<<<<< HEAD
 <<<<<<< HEAD
     write_delim(geneInfo_final, file.path(writeDir, "geneInfo_input_axolotl.tsv"))
   }
@@ -2869,10 +3147,16 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
   }
   return(geneInfo_output)
 >>>>>>> 58196df (functions)
+=======
+    write_delim(geneInfo_output, file.path(writeDir, "geneInfo_input_axolotl.tsv"))
+  }
+  return(geneInfo_output)
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 
 
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 # Not yet started -----
 
@@ -2882,6 +3166,8 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
 
 build_DB <- function(use.defaults = TRUE, ...){}
 =======
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
 # Assemble prepared inputs into final database
 # REQUIRED:
 # complex.input - the output of make_complex_input
@@ -2915,4 +3201,7 @@ assemble_database <- function(complex.input = NULL,
   return(database)
 
 }
+<<<<<<< HEAD
 >>>>>>> 58196df (functions)
+=======
+>>>>>>> 3b4d4b3daadff2f7c37c1963ea67da409a3717e3
