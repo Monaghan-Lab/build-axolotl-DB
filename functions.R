@@ -1,8 +1,3 @@
-# Quality testing:
-#   - Uniqueness
-#   - Missingness from OG database (cofactors, complexes, interactions, geneInfo)
-#   - Composition of database when compared to OG (like % secreted, etc)
-
 # prep_gene_list - build gene lists for downstream database filtering
 #
 # REQUIRED:
