@@ -55,16 +55,14 @@ prep_gene_list <- function(objects,
 # OPTIONS:
 # contains.spaces - do the genes output by prep_gene_list contain spaces? (default FALSE)
 #   - For example, "ZFP37 [nr]|ZNF568 [hs]|AMEX60DD301000001.1" vs. "ZFP37[nr]|ZNF568[hs]|AMEX60DD301000001.1"
-# prioritize.human - when both human and other annotations exist, select human as "official" annotation?
-#   - Otherwise, if no human annotation exists, will use the "other" annotation. (default FALSE - keeps both annotations)
-# drop.nonhuman - supercedes 'prioritize.human'; will not check for any non-human annotations (default FALSE)
+# drop.nonhuman - will not check for any non-human annotations (default FALSE)
 # write.outfile - write tab-delimited annotation file (default TRUE)
 # out.dir - directory to output written files to (default working directory)
 
 prep_gene_map <- function(gxt.map,
                           gene.list = NULL,
                           contains.spaces = FALSE,
-                          prioritize.human = FALSE, drop.nonhuman = FALSE,
+                          drop.nonhuman = FALSE,
                           write.outfile = TRUE, out.dir = NULL){
 
   if(missing(gxt.map)){
@@ -89,23 +87,10 @@ prep_gene_map <- function(gxt.map,
     gxtMap <- gxtMap %>%
       filter(!human == "") %>%
       mutate(other = "")
-
-    parseline <- c(full = "", human = "", other = "")
-    gxtMap <- rbind(gxtMap, parseline)
-  } else if(isTRUE(prioritize.human) & isFALSE(drop.nonhuman)){
-    gxtMap <- gxtMap %>%
-      mutate(human = case_when(human == "" & other != "" ~ other,
-                               TRUE ~ human)) %>%
-      mutate(other = "")
-
-    parseline <- c(full = "", human = "", other = "")
-    gxtMap <- rbind(gxtMap, parseline)
-
-  } else{
-    parseline <- c(full = "", human = "", other = "")
-    gxtMap <- rbind(gxtMap, parseline)
-
   }
+
+  parseline <- c(full = "", human = "", other = "")
+  gxtMap <- rbind(gxtMap, parseline)
 
   if(isTRUE(write.outfile)){
     writeDir <- out.dir
@@ -268,7 +253,7 @@ prep_synonym_map <- function(gene.map = NULL,
 # annotation.map - the output of prep_gene_map that will be used to match human genes to axolotl
 #
 # OPTIONS:
-# priority - in the event that there are both human and other annotations for a gene, give priority to either or none. (default "none")
+# prioritize.human - in the event that there are both human and other annotations for a gene, select human. (default FALSE)
 # annotation.cutoff - if fewer than this fraction of subunits are matched to axolotl, drop from input.
 #   - The default 0.5 means that rows will be dropped where < 50% of input subunits are matched to axolotl.
 # check.synonyms - attempt to rescue rows by also testing for synonymous genes? (default FALSE)
@@ -277,7 +262,7 @@ prep_synonym_map <- function(gene.map = NULL,
 # out.dir - directory to output written file to (default working directory)
 
 make_complex_input <- function(annotation.map = NULL,
-                               priority = c("human", "other", "none"),
+                               prioritize.human = FALSE,
                                annotation.cutoff = NULL,
                                check.synonyms = FALSE, synonyms = NULL,
                                write.outfile = TRUE, out.dir = NULL){
@@ -290,12 +275,6 @@ make_complex_input <- function(annotation.map = NULL,
   }
   if(!annotation.cutoff >= 0 & !annotation.cutoff <= 1 ){
     stop("'annotation.cutoff' must be a decimal between 0 and 1.")
-  }
-  if(missing(priority)){
-    priority <- "none"
-  }
-  if(!priority %in% c("human", "other", "none")){
-    stop("'priority' must be one of 'human', 'other', or 'none'.")
   }
 
   complex_input <- CellChatDB.human$complex
@@ -357,56 +336,51 @@ make_complex_input <- function(annotation.map = NULL,
   complex_output_1 <- complex_input %>% # Mapping subunits to axolotl genes
     left_join(annotation.map, by=c("subunit_1" = "human"), relationship = "many-to-many") %>%
     rename(subunit_1a = full) %>%
-    left_join(annotation.map, by=c("subunit_2" = "human"),relationship = "many-to-many") %>%
+    left_join(annotation.map, by=c("subunit_2" = "human"), relationship = "many-to-many") %>%
     rename(subunit_2a = full)  %>%
-    left_join(annotation.map, by=c("subunit_3" = "human"),relationship = "many-to-many") %>%
+    left_join(annotation.map, by=c("subunit_3" = "human"), relationship = "many-to-many") %>%
     rename(subunit_3a = full) %>%
-    left_join(annotation.map, by=c("subunit_4" = "human"),relationship = "many-to-many") %>%
+    left_join(annotation.map, by=c("subunit_4" = "human"), relationship = "many-to-many") %>%
     rename(subunit_4a = full) %>%
-    left_join(annotation.map, by=c("subunit_5" = "human"),relationship = "many-to-many") %>%
+    left_join(annotation.map, by=c("subunit_5" = "human"), relationship = "many-to-many") %>%
     rename(subunit_5a = full) %>%
     left_join(annotation.map, by=c("subunit_1" = "other"), relationship = "many-to-many") %>%
     rename(subunit_1b = full) %>%
-    left_join(annotation.map, by=c("subunit_2" = "other"),relationship = "many-to-many") %>%
+    left_join(annotation.map, by=c("subunit_2" = "other"), relationship = "many-to-many") %>%
     rename(subunit_2b = full)  %>%
-    left_join(annotation.map, by=c("subunit_3" = "other"),relationship = "many-to-many") %>%
+    left_join(annotation.map, by=c("subunit_3" = "other"), relationship = "many-to-many") %>%
     rename(subunit_3b = full) %>%
-    left_join(annotation.map, by=c("subunit_4" = "other"),relationship = "many-to-many") %>%
+    left_join(annotation.map, by=c("subunit_4" = "other"), relationship = "many-to-many") %>%
     rename(subunit_4b = full) %>%
-    left_join(annotation.map, by=c("subunit_5" = "other"),relationship = "many-to-many") %>%
+    left_join(annotation.map, by=c("subunit_5" = "other"), relationship = "many-to-many") %>%
     rename(subunit_5b = full) %>%
     mutate(final_1 = case_when(!is.na(subunit_1a) & is.na(subunit_1b) ~ subunit_1a,
-                               !is.na(subunit_1a) & !is.na(subunit_1b) & priority == "human" ~ subunit_1a,
-                               !is.na(subunit_1a) & !is.na(subunit_1b) & priority == "other" ~ subunit_1b,
-                               !is.na(subunit_1a) & !is.na(subunit_1b) & priority == "none" ~ paste0(subunit_1a,";",subunit_1b),
+                               !is.na(subunit_1a) & !is.na(subunit_1b) & isTRUE(prioritize.human) ~ subunit_1a,
+                               !is.na(subunit_1a) & !is.na(subunit_1b) & isFALSE(prioritize.human) ~ paste0(subunit_1a,";",subunit_1b),
                                is.na(subunit_1a) & !is.na(subunit_1b) ~ subunit_1b,
                                is.na(subunit_1a) & is.na(subunit_1b) ~ NA),
            final_2 = case_when(is.na(subunit_2) ~ NA,
                                !is.na(subunit_2a) & is.na(subunit_2b) ~ subunit_2a,
-                               !is.na(subunit_2a) & !is.na(subunit_2b) & priority == "human" ~ subunit_2a,
-                               !is.na(subunit_2a) & !is.na(subunit_2b) & priority == "other" ~ subunit_2b,
-                               !is.na(subunit_2a) & !is.na(subunit_2b) & priority == "none" ~ paste0(subunit_2a,";",subunit_2b),
+                               !is.na(subunit_2a) & !is.na(subunit_2b) & isTRUE(prioritize.human) ~ subunit_2a,
+                               !is.na(subunit_2a) & !is.na(subunit_2b) & isFALSE(prioritize.human) ~ paste0(subunit_2a,";",subunit_2b),
                                is.na(subunit_2a) & !is.na(subunit_2b) ~ subunit_2b,
                                is.na(subunit_2a) & is.na(subunit_2b) ~ NA),
            final_3 = case_when(is.na(subunit_3) ~ NA,
                                !is.na(subunit_3a) & is.na(subunit_3b) ~ subunit_3a,
-                               !is.na(subunit_3a) & !is.na(subunit_3b) & priority == "human" ~ subunit_3a,
-                               !is.na(subunit_3a) & !is.na(subunit_3b) & priority == "other" ~ subunit_3b,
-                               !is.na(subunit_3a) & !is.na(subunit_3b) & priority == "none" ~ paste0(subunit_3a,";",subunit_3b),
+                               !is.na(subunit_3a) & !is.na(subunit_3b) & isTRUE(prioritize.human) ~ subunit_3a,
+                               !is.na(subunit_3a) & !is.na(subunit_3b) & isFALSE(prioritize.human) ~ paste0(subunit_3a,";",subunit_3b),
                                is.na(subunit_3a) & !is.na(subunit_3b) ~ subunit_3b,
                                is.na(subunit_3a) & is.na(subunit_3b) ~ NA),
            final_4 = case_when(is.na(subunit_4) ~ NA,
                                !is.na(subunit_4a) & is.na(subunit_4b) ~ subunit_4a,
-                               !is.na(subunit_4a) & !is.na(subunit_4b) & priority == "human" ~ subunit_4a,
-                               !is.na(subunit_4a) & !is.na(subunit_4b) & priority == "other" ~ subunit_4b,
-                               !is.na(subunit_4a) & !is.na(subunit_4b) & priority == "none" ~ paste0(subunit_4a,";",subunit_4b),
+                               !is.na(subunit_4a) & !is.na(subunit_4b) & isTRUE(prioritize.human) ~ subunit_4a,
+                               !is.na(subunit_4a) & !is.na(subunit_4b) & isFALSE(prioritize.human) ~ paste0(subunit_4a,";",subunit_4b),
                                is.na(subunit_4a) & !is.na(subunit_4b) ~ subunit_4b,
                                is.na(subunit_4a) & is.na(subunit_4b) ~ NA),
            final_5 = case_when(is.na(subunit_5) ~ NA,
                                !is.na(subunit_5a) & is.na(subunit_5b) ~ subunit_5a,
-                               !is.na(subunit_5a) & !is.na(subunit_5b) & priority == "human" ~ subunit_5a,
-                               !is.na(subunit_5a) & !is.na(subunit_5b) & priority == "other" ~ subunit_5b,
-                               !is.na(subunit_5a) & !is.na(subunit_5b) & priority == "human" ~ paste0(subunit_5a,";",subunit_5b),
+                               !is.na(subunit_5a) & !is.na(subunit_5b) & isTRUE(prioritize.human) ~ subunit_5a,
+                               !is.na(subunit_5a) & !is.na(subunit_5b) & isFALSE(prioritize.human) ~ paste0(subunit_5a,";",subunit_5b),
                                is.na(subunit_5a) & !is.na(subunit_5b) ~ subunit_5b,
                                is.na(subunit_5a) & is.na(subunit_5b) ~ NA)) %>%
     select(c("rowname", "start_na", starts_with("final"))) %>%
@@ -423,7 +397,7 @@ make_complex_input <- function(annotation.map = NULL,
   complex_output_1 <- complex_output_1 %>%
     select(rowname, start_na, end_na, starts_with("subunit_")) %>%
     mutate(na_diff = end_na/start_na) %>%
-    filter(na_diff > annotation.cutoff) %>% # Drop if greater than X fraction of subunits are not annotated
+    filter(na_diff >= annotation.cutoff) %>% # Drop if greater than X fraction of subunits are not annotated
     select(-c(start_na, end_na, na_diff)) %>%
     unique()
 
@@ -459,7 +433,7 @@ make_complex_input <- function(annotation.map = NULL,
 # annotation.map - the output of prep_gene_map that will be used to match human genes to axolotl
 #
 # OPTIONS:
-# priority - in the event that there are both human and other annotations for a gene, give priority to either or none. (default "none")
+# prioritize.human - in the event that there are both human and other annotations for a gene, select human. (default FALSE)
 # annotation.cutoff - if fewer than this fraction of cofactors are matched to axolotl, drop from input. (default 0.5)
 # check.synonyms - attempt to rescue rows by also testing for synonymous genes? (default FALSE)
 #   - Requires synonyms if TRUE; the output of prep_synonym_map
@@ -467,7 +441,7 @@ make_complex_input <- function(annotation.map = NULL,
 # out.dir - directory to output written file to (default working directory)
 
 make_cofactor_input <- function(annotation.map = NULL,
-                                priority = c("human", "other", "none"),
+                                prioritize.human = FALSE,
                                 annotation.cutoff = NULL,
                                 check.synonyms = FALSE, synonyms = NULL,
                                 write.outfile = TRUE, out.dir = NULL){
@@ -482,14 +456,6 @@ make_cofactor_input <- function(annotation.map = NULL,
   }
   if(!annotation.cutoff >= 0 & !annotation.cutoff <= 1 ){
     stop("'annotation.cutoff' must be a decimal between 0 and 1.")
-  } else if(annotation.cutoff == 1){
-    warning("An 'annotation.cutoff' of 1 may produce unintended results including an empty output.")
-  }
-  if(missing(priority)){
-    priority <- "none"
-  }
-  if(!priority %in% c("human", "other", "none")){
-    stop("'priority' must be one of 'human', 'other', or 'none'.")
   }
 
   cofactor_input <- CellChatDB.human$cofactor
@@ -687,118 +653,100 @@ make_cofactor_input <- function(annotation.map = NULL,
     left_join(annotation.map, by=c("cofactor15" = "other"),relationship = "many-to-many") %>%
     rename(cofactor15b = full) %>%
     left_join(annotation.map, by=c("cofactor16" = "other"),relationship = "many-to-many") %>%
-    rename(cofactor16b = full)
-
-  cofactor_output_1 <- cofactor_output_1 %>%
+    rename(cofactor16b = full) %>%
     mutate(final_1 = case_when(!is.na(cofactor1a) & is.na(cofactor1b) ~ cofactor1a,
-                               !is.na(cofactor1a) & !is.na(cofactor1b) & priority == "human" ~ cofactor1a,
-                               !is.na(cofactor1a) & !is.na(cofactor1b) & priority == "other" ~ cofactor1b,
-                               !is.na(cofactor1a) & !is.na(cofactor1b) & priority == "none" ~ paste0(cofactor1a,";",cofactor1b),
+                               !is.na(cofactor1a) & !is.na(cofactor1b) & isTRUE(prioritize.human) ~ cofactor1a,
+                               !is.na(cofactor1a) & !is.na(cofactor1b) & isFALSE(prioritize.human) ~ paste0(cofactor1a,";",cofactor1b),
                                is.na(cofactor1a) & !is.na(cofactor1b) ~ cofactor1b,
                                is.na(cofactor1a) & is.na(cofactor1b) ~ NA),
            final_2 = case_when(is.na(cofactor2) ~ NA,
                                !is.na(cofactor2a) & is.na(cofactor2b) ~ cofactor2a,
-                               !is.na(cofactor2a) & !is.na(cofactor2b) & priority == "human" ~ cofactor2a,
-                               !is.na(cofactor2a) & !is.na(cofactor2b) & priority == "other" ~ cofactor2b,
-                               !is.na(cofactor2a) & !is.na(cofactor2b) & priority == "none" ~ paste0(cofactor2a,";",cofactor2b),
+                               !is.na(cofactor2a) & !is.na(cofactor2b) & isTRUE(prioritize.human) ~ cofactor2a,
+                               !is.na(cofactor2a) & !is.na(cofactor2b) & isFALSE(prioritize.human) ~ paste0(cofactor2a,";",cofactor2b),
                                is.na(cofactor2a) & !is.na(cofactor2b) ~ cofactor2b,
                                is.na(cofactor2a) & is.na(cofactor2b) ~ NA),
            final_3 = case_when(is.na(cofactor3) ~ NA,
                                !is.na(cofactor3a) & is.na(cofactor3b) ~ cofactor3a,
-                               !is.na(cofactor3a) & !is.na(cofactor3b) & priority == "human" ~ cofactor3a,
-                               !is.na(cofactor3a) & !is.na(cofactor3b) & priority == "other" ~ cofactor3b,
-                               !is.na(cofactor3a) & !is.na(cofactor3b) & priority == "none" ~ paste0(cofactor3a,";",cofactor3b),
+                               !is.na(cofactor3a) & !is.na(cofactor3b) & isTRUE(prioritize.human) ~ cofactor3a,
+                               !is.na(cofactor3a) & !is.na(cofactor3b) &isFALSE(prioritize.human) ~ paste0(cofactor3a,";",cofactor3b),
                                is.na(cofactor3a) & !is.na(cofactor3b) ~ cofactor3b,
                                is.na(cofactor3a) & is.na(cofactor3b) ~ NA),
            final_4 = case_when(is.na(cofactor4) ~ NA,
                                !is.na(cofactor4a) & is.na(cofactor4b) ~ cofactor4a,
-                               !is.na(cofactor4a) & !is.na(cofactor4b) & priority == "human" ~ cofactor4a,
-                               !is.na(cofactor4a) & !is.na(cofactor4b) & priority == "other" ~ cofactor4b,
-                               !is.na(cofactor4a) & !is.na(cofactor4b) & priority == "none" ~ paste0(cofactor4a,";",cofactor4b),
+                               !is.na(cofactor4a) & !is.na(cofactor4b) & isTRUE(prioritize.human) ~ cofactor4a,
+                               !is.na(cofactor4a) & !is.na(cofactor4b) & isFALSE(prioritize.human) ~ paste0(cofactor4a,";",cofactor4b),
                                is.na(cofactor4a) & !is.na(cofactor4b) ~ cofactor4b,
                                is.na(cofactor4a) & is.na(cofactor4b) ~ NA),
            final_5 = case_when(is.na(cofactor5) ~ NA,
                                !is.na(cofactor5a) & is.na(cofactor5b) ~ cofactor5a,
-                               !is.na(cofactor5a) & !is.na(cofactor5b) & priority == "human" ~ cofactor5a,
-                               !is.na(cofactor5a) & !is.na(cofactor5b) & priority == "other" ~ cofactor5b,
-                               !is.na(cofactor5a) & !is.na(cofactor5b) & priority == "none" ~ paste0(cofactor5a,";",cofactor5b),
+                               !is.na(cofactor5a) & !is.na(cofactor5b) & isTRUE(prioritize.human) ~ cofactor5a,
+                               !is.na(cofactor5a) & !is.na(cofactor5b) & isFALSE(prioritize.human) ~ paste0(cofactor5a,";",cofactor5b),
                                is.na(cofactor5a) & !is.na(cofactor5b) ~ cofactor5b,
                                is.na(cofactor5a) & is.na(cofactor5b) ~ NA),
            final_6 = case_when(is.na(cofactor6) ~ NA,
                                !is.na(cofactor6a) & is.na(cofactor6b) ~ cofactor6a,
-                               !is.na(cofactor6a) & !is.na(cofactor6b) & priority == "human" ~ cofactor6a,
-                               !is.na(cofactor6a) & !is.na(cofactor6b) & priority == "other" ~ cofactor6b,
-                               !is.na(cofactor6a) & !is.na(cofactor6b) & priority == "none" ~ paste0(cofactor6a,";",cofactor6b),
+                               !is.na(cofactor6a) & !is.na(cofactor6b) & isTRUE(prioritize.human) ~ cofactor6a,
+                               !is.na(cofactor6a) & !is.na(cofactor6b) & isFALSE(prioritize.human) ~ paste0(cofactor6a,";",cofactor6b),
                                is.na(cofactor6a) & !is.na(cofactor6b) ~ cofactor6b,
                                is.na(cofactor6a) & is.na(cofactor6b) ~ NA),
            final_7 = case_when(is.na(cofactor7) ~ NA,
                                !is.na(cofactor7a) & is.na(cofactor7b) ~ cofactor7a,
-                               !is.na(cofactor7a) & !is.na(cofactor7b) & priority == "human" ~ cofactor7a,
-                               !is.na(cofactor7a) & !is.na(cofactor7b) & priority == "other" ~ cofactor7b,
-                               !is.na(cofactor7a) & !is.na(cofactor7b) & priority == "none" ~ paste0(cofactor7a,";",cofactor7b),
+                               !is.na(cofactor7a) & !is.na(cofactor7b) & isTRUE(prioritize.human) ~ cofactor7a,
+                               !is.na(cofactor7a) & !is.na(cofactor7b) & isFALSE(prioritize.human) ~ paste0(cofactor7a,";",cofactor7b),
                                is.na(cofactor7a) & !is.na(cofactor7b) ~ cofactor7b,
                                is.na(cofactor7a) & is.na(cofactor7b) ~ NA),
            final_8 = case_when(is.na(cofactor8) ~ NA,
                                !is.na(cofactor8a) & is.na(cofactor8b) ~ cofactor8a,
-                               !is.na(cofactor8a) & !is.na(cofactor8b) & priority == "human" ~ cofactor8a,
-                               !is.na(cofactor8a) & !is.na(cofactor8b) & priority == "other" ~ cofactor8b,
-                               !is.na(cofactor8a) & !is.na(cofactor8b) & priority == "none" ~ paste0(cofactor8a,";",cofactor8b),
+                               !is.na(cofactor8a) & !is.na(cofactor8b) & isTRUE(prioritize.human) ~ cofactor8a,
+                               !is.na(cofactor8a) & !is.na(cofactor8b) & isFALSE(prioritize.human) ~ paste0(cofactor8a,";",cofactor8b),
                                is.na(cofactor8a) & !is.na(cofactor8b) ~ cofactor8b,
                                is.na(cofactor8a) & is.na(cofactor8b) ~ NA),
            final_9 = case_when(is.na(cofactor9) ~ NA,
                                !is.na(cofactor9a) & is.na(cofactor9b) ~ cofactor9a,
-                               !is.na(cofactor9a) & !is.na(cofactor9b) & priority == "human" ~ cofactor9a,
-                               !is.na(cofactor9a) & !is.na(cofactor9b) & priority == "other" ~ cofactor9b,
-                               !is.na(cofactor9a) & !is.na(cofactor9b) & priority == "none" ~ paste0(cofactor9a,";",cofactor9b),
+                               !is.na(cofactor9a) & !is.na(cofactor9b) & isTRUE(prioritize.human) ~ cofactor9a,
+                               !is.na(cofactor9a) & !is.na(cofactor9b) & isFALSE(prioritize.human) ~ paste0(cofactor9a,";",cofactor9b),
                                is.na(cofactor9a) & !is.na(cofactor9b) ~ cofactor9b,
                                is.na(cofactor9a) & is.na(cofactor9b) ~ NA),
            final_10 = case_when(is.na(cofactor10) ~ NA,
                                 !is.na(cofactor10a) & is.na(cofactor10b) ~ cofactor10a,
-                                !is.na(cofactor10a) & !is.na(cofactor10b) & priority == "human" ~ cofactor10a,
-                                !is.na(cofactor10a) & !is.na(cofactor10b) & priority == "other" ~ cofactor10b,
-                                !is.na(cofactor10a) & !is.na(cofactor10b) & priority == "none" ~ paste0(cofactor10a,";",cofactor10b),
+                                !is.na(cofactor10a) & !is.na(cofactor10b) & isTRUE(prioritize.human) ~ cofactor10a,
+                                !is.na(cofactor10a) & !is.na(cofactor10b) & isFALSE(prioritize.human) ~ paste0(cofactor10a,";",cofactor10b),
                                 is.na(cofactor10a) & !is.na(cofactor10b) ~ cofactor10b,
                                 is.na(cofactor10a) & is.na(cofactor10b) ~ NA),
            final_11 = case_when(is.na(cofactor11) ~ NA,
                                 !is.na(cofactor11a) & is.na(cofactor11b) ~ cofactor11a,
-                                !is.na(cofactor11a) & !is.na(cofactor11b) & priority == "human" ~ cofactor11a,
-                                !is.na(cofactor11a) & !is.na(cofactor11b) & priority == "other" ~ cofactor11b,
-                                !is.na(cofactor11a) & !is.na(cofactor11b) & priority == "none" ~ paste0(cofactor11a,";",cofactor11b),
+                                !is.na(cofactor11a) & !is.na(cofactor11b) & isTRUE(prioritize.human) ~ cofactor11a,
+                                !is.na(cofactor11a) & !is.na(cofactor11b) & isFALSE(prioritize.human) ~ paste0(cofactor11a,";",cofactor11b),
                                 is.na(cofactor11a) & !is.na(cofactor11b) ~ cofactor11b,
                                 is.na(cofactor11a) & is.na(cofactor11b) ~ NA),
            final_12 = case_when(is.na(cofactor12) ~ NA,
                                 !is.na(cofactor12a) & is.na(cofactor12b) ~ cofactor12a,
-                                !is.na(cofactor12a) & !is.na(cofactor12b) & priority == "human" ~ cofactor12a,
-                                !is.na(cofactor12a) & !is.na(cofactor12b) & priority == "other" ~ cofactor12b,
-                                !is.na(cofactor12a) & !is.na(cofactor12b) & priority == "none" ~ paste0(cofactor12a,";",cofactor12b),
+                                !is.na(cofactor12a) & !is.na(cofactor12b) & isTRUE(prioritize.human) ~ cofactor12a,
+                                !is.na(cofactor12a) & !is.na(cofactor12b) & isFALSE(prioritize.human) ~ paste0(cofactor12a,";",cofactor12b),
                                 is.na(cofactor12a) & !is.na(cofactor12b) ~ cofactor12b,
                                 is.na(cofactor12a) & is.na(cofactor12b) ~ NA),
            final_13 = case_when(is.na(cofactor13) ~ NA,
                                 !is.na(cofactor13a) & is.na(cofactor13b) ~ cofactor13a,
-                                !is.na(cofactor13a) & !is.na(cofactor13b) & priority == "human" ~ cofactor13a,
-                                !is.na(cofactor13a) & !is.na(cofactor13b) & priority == "other" ~ cofactor13b,
-                                !is.na(cofactor13a) & !is.na(cofactor13b) & priority == "none" ~ paste0(cofactor13a,";",cofactor13b),
+                                !is.na(cofactor13a) & !is.na(cofactor13b) & isTRUE(prioritize.human) ~ cofactor13a,
+                                !is.na(cofactor13a) & !is.na(cofactor13b) & isFALSE(prioritize.human) ~ paste0(cofactor13a,";",cofactor13b),
                                 is.na(cofactor13a) & !is.na(cofactor13b) ~ cofactor13b,
                                 is.na(cofactor13a) & is.na(cofactor13b) ~ NA),
            final_14 = case_when(is.na(cofactor14) ~ NA,
                                 !is.na(cofactor14a) & is.na(cofactor14b) ~ cofactor14a,
-                                !is.na(cofactor14a) & !is.na(cofactor14b) & priority == "human" ~ cofactor14a,
-                                !is.na(cofactor14a) & !is.na(cofactor14b) & priority == "other" ~ cofactor14b,
-                                !is.na(cofactor14a) & !is.na(cofactor14b) & priority == "none" ~ paste0(cofactor14a,";",cofactor14b),
+                                !is.na(cofactor14a) & !is.na(cofactor14b) & isTRUE(prioritize.human) ~ cofactor14a,
+                                !is.na(cofactor14a) & !is.na(cofactor14b) & isFALSE(prioritize.human) ~ paste0(cofactor14a,";",cofactor14b),
                                 is.na(cofactor14a) & !is.na(cofactor14b) ~ cofactor14b,
                                 is.na(cofactor14a) & is.na(cofactor14b) ~ NA),
            final_15 = case_when(is.na(cofactor15) ~ NA,
                                 !is.na(cofactor15a) & is.na(cofactor15b) ~ cofactor15a,
-                                !is.na(cofactor15a) & !is.na(cofactor15b) & priority == "human" ~ cofactor15a,
-                                !is.na(cofactor15a) & !is.na(cofactor15b) & priority == "other" ~ cofactor15b,
-                                !is.na(cofactor15a) & !is.na(cofactor15b) & priority == "none" ~ paste0(cofactor15a,";",cofactor15b),
+                                !is.na(cofactor15a) & !is.na(cofactor15b) & isTRUE(prioritize.human) ~ cofactor15a,
+                                !is.na(cofactor15a) & !is.na(cofactor15b) & isFALSE(prioritize.human) ~ paste0(cofactor15a,";",cofactor15b),
                                 is.na(cofactor15a) & !is.na(cofactor15b) ~ cofactor15b,
                                 is.na(cofactor15a) & is.na(cofactor15b) ~ NA),
            final_16 = case_when(is.na(cofactor16) ~ NA,
                                 !is.na(cofactor16a) & is.na(cofactor16b) ~ cofactor16a,
-                                !is.na(cofactor16a) & !is.na(cofactor16b) & priority == "human" ~ cofactor16a,
-                                !is.na(cofactor16a) & !is.na(cofactor16b) & priority == "other" ~ cofactor16b,
-                                !is.na(cofactor16a) & !is.na(cofactor16b) & priority == "none" ~ paste0(cofactor16a,";",cofactor16b),
+                                !is.na(cofactor16a) & !is.na(cofactor16b) & isTRUE(prioritize.human) ~ cofactor16a,
+                                !is.na(cofactor16a) & !is.na(cofactor16b) & isFALSE(prioritize.human) ~ paste0(cofactor16a,";",cofactor16b),
                                 is.na(cofactor16a) & !is.na(cofactor16b) ~ cofactor16b,
                                 is.na(cofactor16a) & is.na(cofactor16b) ~ NA)) %>%
     select(c("rowname", "start_na", starts_with("final"))) %>%
@@ -824,10 +772,9 @@ make_cofactor_input <- function(annotation.map = NULL,
   cofactor_input_wnts <- cofactor_input_wnts %>%
     mutate(final = case_when(is.na(humanAnnot) & is.na(otherAnnot) ~ NA,
                              !is.na(humanAnnot) & is.na(otherAnnot) ~ humanAnnot,
-                             is.na(humanAnnot) & !is.na(otherAnnot) ~ otherAnnot,
-                             !is.na(humanAnnot) & !is.na(otherAnnot) & priority == "human" ~ humanAnnot,
-                             !is.na(humanAnnot) & !is.na(otherAnnot) & priority == "other" ~ otherAnnot,
-                             !is.na(humanAnnot) & !is.na(otherAnnot) & priority == "none" ~ paste0(humanAnnot,";",otherAnnot))) %>%
+                             !is.na(humanAnnot) & !is.na(otherAnnot) & isTRUE(prioritize.human) ~ humanAnnot,
+                             !is.na(humanAnnot) & !is.na(otherAnnot) & isFALSE(prioritize.human) ~ paste0(humanAnnot,";",otherAnnot),
+                             is.na(humanAnnot) & !is.na(otherAnnot) ~ otherAnnot)) %>%
     select(rowname, start_na, num, final) %>%
     separate_longer_delim(final, ";") %>%
     unique() %>%
@@ -887,8 +834,7 @@ make_cofactor_input <- function(annotation.map = NULL,
 # cofactor - the output of make_cofactor_input
 #
 # OPTIONS:
-# priority - in the event that there are both human and other annotations for a gene, give priority to either or none. (default "none")
-# annotation.cutoff - if fewer than this fraction of cofactors are matched to axolotl, drop from input. (default 0.5)
+# prioritize.human - in the event that there are both human and other annotations for a gene, select human. (default FALSE)
 # check.synonyms - attempt to rescue rows by also testing for synonymous genes? (default FALSE)
 #   - Requires synonyms if TRUE; the output of prep_synonym_map
 # write.outfile - write tab-delimited complex output file (default TRUE)
@@ -896,25 +842,12 @@ make_cofactor_input <- function(annotation.map = NULL,
 
 make_interaction_input <- function(annotation.map = NULL,
                                    complex = NULL, cofactor = NULL,
-                                   priority = c("human", "other", "none"),
-                                   annotation.cutoff = NULL,
+                                   prioritize.human = FALSE,
                                    check.synonyms = FALSE, synonyms = NULL,
                                    write.outfile = TRUE, out.dir = NULL){
 
   if(is.null(annotation.map) | is.null(complex) | is.null(cofactor)){
     stop("Please provide all required inputs.")
-  }
-  if(missing(priority)){
-    priority <- "none"
-  }
-  if(!priority %in% c("human", "other", "none")){
-    stop("'priority' must be one of 'human', 'other', or 'none'.")
-  }
-  if(missing(cofactor)){
-    stop("You must provide the output of make_cofactor_input.")
-  }
-  if(missing(complex)){
-    stop("You must provide the output of make_complex_input.")
   }
 
   interaction_input <- CellChatDB.human$interaction
@@ -958,15 +891,13 @@ make_interaction_input <- function(annotation.map = NULL,
     left_join(annotation.map, by=c("receptor" = "other"),relationship = "many-to-many") %>%
     rename(receptor_1b = full) %>%
     mutate(final_ligand = case_when(!is.na(ligand_1a) & is.na(ligand_1b) ~ ligand_1a,
-                                    !is.na(ligand_1a) & !is.na(ligand_1b) & priority == "human" ~ ligand_1a,
-                                    !is.na(ligand_1a) & !is.na(ligand_1b) & priority == "other" ~ ligand_1b,
-                                    !is.na(ligand_1a) & !is.na(ligand_1b) & priority == "none" ~ paste0(ligand_1a,";",ligand_1b),
+                                    !is.na(ligand_1a) & !is.na(ligand_1b) & isTRUE(prioritize.human) ~ ligand_1a,
+                                    !is.na(ligand_1a) & !is.na(ligand_1b) & isFALSE(prioritize.human) ~ paste0(ligand_1a,";",ligand_1b),
                                     is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1b,
                                     is.na(ligand_1a) & is.na(ligand_1b) ~ NA),
            final_receptor = case_when(!is.na(receptor_1a) & is.na(receptor_1b) ~ receptor_1a,
-                                      !is.na(receptor_1a) & !is.na(receptor_1b) & priority == "human" ~ receptor_1a,
-                                      !is.na(receptor_1a) & !is.na(receptor_1b) & priority == "other" ~ receptor_1b,
-                                      !is.na(receptor_1a) & !is.na(receptor_1b) & priority == "none" ~ paste0(receptor_1a,";",receptor_1b),
+                                      !is.na(receptor_1a) & !is.na(receptor_1b) & isTRUE(prioritize.human) ~ receptor_1a,
+                                      !is.na(receptor_1a) & !is.na(receptor_1b) & isFALSE(prioritize.human) ~ paste0(receptor_1a,";",receptor_1b),
                                       is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1b,
                                       is.na(receptor_1a) & is.na(receptor_1b) ~ NA)) %>%
     separate_longer_delim(final_ligand, ";") %>%
@@ -987,15 +918,13 @@ make_interaction_input <- function(annotation.map = NULL,
     left_join(annotation.map, by=c("receptor" = "other"), relationship = "many-to-many") %>%
     rename(receptor_1b = full) %>%
     mutate(final_ligand = case_when(!is.na(ligand_1a) & is.na(ligand_1b) ~ ligand_1a,
-                                    !is.na(ligand_1a) & !is.na(ligand_1b) & priority == "human" ~ ligand_1a,
-                                    !is.na(ligand_1a) & !is.na(ligand_1b) & priority == "other" ~ ligand_1b,
-                                    !is.na(ligand_1a) & !is.na(ligand_1b) & priority == "none" ~ paste0(ligand_1a,";",ligand_1b),
+                                    !is.na(ligand_1a) & !is.na(ligand_1b) & isTRUE(prioritize.human) ~ ligand_1a,
+                                    !is.na(ligand_1a) & !is.na(ligand_1b) & isFALSE(prioritize.human) ~ paste0(ligand_1a,";",ligand_1b),
                                     is.na(ligand_1a) & !is.na(ligand_1b) ~ ligand_1b,
                                     is.na(ligand_1a) & is.na(ligand_1b) ~ NA),
            final_receptor = case_when(!is.na(receptor_1a) & is.na(receptor_1b) ~ receptor_1a,
-                                      !is.na(receptor_1a) & !is.na(receptor_1b) & priority == "human" ~ receptor_1a,
-                                      !is.na(receptor_1a) & !is.na(receptor_1b) & priority == "other" ~ receptor_1b,
-                                      !is.na(receptor_1a) & !is.na(receptor_1b) & priority == "none" ~ paste0(receptor_1a,";",receptor_1b),
+                                      !is.na(receptor_1a) & !is.na(receptor_1b) & isTRUE(prioritize.human) ~ receptor_1a,
+                                      !is.na(receptor_1a) & !is.na(receptor_1b) & isFALSE(prioritize.human) ~ paste0(receptor_1a,";",receptor_1b),
                                       is.na(receptor_1a) & !is.na(receptor_1b) ~ receptor_1b,
                                       is.na(receptor_1a) & is.na(receptor_1b) ~ NA)) %>%
     separate_longer_delim(final_ligand, ";") %>%
@@ -1097,29 +1026,17 @@ make_interaction_input <- function(annotation.map = NULL,
 # synonyms - the output of prep_synonym_map
 # complex - the output of make_complex_input
 # cofactor - the output of make_cofactor_input
-# interactions - the output of make_interaction_input
+# interaction - the output of make_interaction_input
 #
 # OPTIONAL:
 # write.outfile - write tab-delimited complex output file (default TRUE)
 # out.dir - directory to output written file to (default working directory)
 
 make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
-                                complex = NULL, cofactor = NULL, interactions = NULL,
+                                complex = NULL, cofactor = NULL, interaction = NULL,
                                 write.outfile = TRUE, out.dir = NULL){
-  if(is.null(annotation.map)){
-    stop("You must provide the human to axolotl map output by prep_gene_map.")
-  }
-  if(is.null(synonyms)){
-    stop("You must provide the Symbol to Synonym map output by prep_synonyms.")
-  }
-  if(is.null(complex)){
-    stop("You must provide the output of make_complex_input.")
-  }
-  if(is.null(cofactor)){
-    stop("You must provide the output of make_cofactor_input.")
-  }
-  if(is.null(interactions)){
-    stop("You must provide the output of make_interaction_input.")
+  if(is.null(annotation.map) | is.null(synonyms) | is.null(complex) | is.null(cofactor) | is.null(interaction)){
+    stop("Please provide all required inputs.")
   }
 
   geneInfo_input <- CellChatDB.human$geneInfo %>%
@@ -1190,12 +1107,12 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
     select(value) %>%
     unique() %>%
     `colnames<-`(c("gene"))
-  ligands <- interactions %>%
+  ligands <- interaction %>%
     select(ligand) %>%
     unique() %>%
     filter(!ligand %in% rownames(complex))%>%
     `colnames<-`(c("gene"))
-  receptors <- interactions %>%
+  receptors <- interaction %>%
     select(receptor) %>%
     unique() %>%
     filter(!receptor %in% rownames(complex))%>%
@@ -1244,39 +1161,37 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
     write_delim(geneInfo_output, file.path(writeDir, "geneInfo_input_axolotl.tsv"))
   }
   return(geneInfo_output)
-
-
 }
 
 # Assemble prepared inputs into final database
 # REQUIRED:
-# complex.input - the output of make_complex_input
-# interaction.input - the output of make_interaction_input
-# cofactor.input - the output of make_cofactor_input
-# geneInfo.input - the output of make_geneInfo_input
+# complex - the output of make_complex_input
+# interaction - the output of make_interaction_input
+# cofactor - the output of make_cofactor_input
+# geneInfo - the output of make_geneInfo_input
 
-assemble_database <- function(complex.input = NULL,
-                              interaction.input = NULL,
-                              cofactor.input = NULL,
-                              geneInfo.input = NULL){
+assemble_database <- function(complex = NULL,
+                              interaction = NULL,
+                              cofactor = NULL,
+                              geneInfo = NULL){
 
-  if(is.null(complex.input) | is.null(interaction.input) | is.null(cofactor.input) | is.null(geneInfo.input)){
+  if(is.null(complex) | is.null(interaction) | is.null(cofactor) | is.null(geneInfo)){
     stop("You must provide all four inputs to assemble the database.")
   }
 
   options(stringsAsFactors = FALSE)
 
-  complex.input[is.na(complex.input)] <- ""
+  complex[is.na(complex)] <- ""
 
-  interaction.input[is.na(interaction.input)] <- ""
-  interaction.input$interaction_name <- rownames(interaction.input)
+  interaction[is.na(interaction)] <- ""
+  interaction$interaction_name <- rownames(interaction)
 
-  cofactor.input[is.na(cofactor.input)] <- ""
+  cofactor[is.na(cofactor)] <- ""
 
-  database <- list(complex = complex.input,
-                   interaction = interaction.input,
-                   cofactor = cofactor.input,
-                   geneInfo = geneInfo.input)
+  database <- list(complex = complex,
+                   interaction = interaction,
+                   cofactor = cofactor,
+                   geneInfo = geneInfo)
 
   return(database)
 
