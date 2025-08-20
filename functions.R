@@ -421,7 +421,10 @@ make_complex_input <- function(annotation.map = NULL,
     if(is.null(writeDir)){
       writeDir <- "./"
     }
-    write.table(complex_output_1, file = file.path(writeDir, "complex_input_axolotl.tsv"), quote = FALSE)
+    write.table(complex_output_1,
+                file = file.path(writeDir, "complex_input_axolotl.tsv"),
+                quote = TRUE,
+                sep = "\t")
   }
 
   return(complex_output_1)
@@ -821,7 +824,10 @@ make_cofactor_input <- function(annotation.map = NULL,
     if(is.null(writeDir)){
       writeDir <- "./"
     }
-    write.table(cofactor_output_1, file = file.path(writeDir, "cofactor_input_axolotl.tsv"), quote = FALSE)
+    write.table(cofactor_output_1,
+                file = file.path(writeDir, "cofactor_input_axolotl.tsv"),
+                quote = TRUE,
+                sep = "\t")
   }
   return(cofactor_output_1)
 
@@ -1015,7 +1021,10 @@ make_interaction_input <- function(annotation.map = NULL,
     if(is.null(writeDir)){
       writeDir <- "./"
     }
-    write.table(interaction_output, file = file.path(writeDir, "interaction_input_axolotl.tsv"), quote = FALSE)
+    write.table(interaction_output,
+                file = file.path(writeDir, "interaction_input_axolotl.tsv"),
+                quote = TRUE,
+                sep = "\t")
   }
   return(interaction_output)
 }
@@ -1159,7 +1168,10 @@ make_geneInfo_input <- function(annotation.map = NULL, synonyms = NULL,
     if(is.null(writeDir)){
       writeDir <- "./"
     }
-    write.table(geneInfo_output, file = file.path(writeDir, "geneInfo_input_axolotl.tsv"), quote = FALSE)
+    write.table(geneInfo_output,
+                file = file.path(writeDir, "geneInfo_input_axolotl.tsv"),
+                quote = TRUE,
+                sep = "\t")
   }
   return(geneInfo_output)
 }
